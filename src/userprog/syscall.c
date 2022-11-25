@@ -277,12 +277,6 @@ void check_valid_pointer(const void* ptr) {
 	if(is_user_vaddr(ptr) == false) {
 		force_exit();
 	}
-
-	// printf("check_valid_pointer %p\n", ptr);
-	struct page_header* header = find_header((const void*) ptr);
-	if (header == NULL) {
-		// force_exit();
-	}
 }
 
 void check_valid_buffer (void* buffer, unsigned size) {
