@@ -276,7 +276,7 @@ syscall_handler (struct intr_frame *f)
 void check_valid_pointer(const void* ptr) {
 	if(is_user_vaddr(ptr) == false) {
 		force_exit();
-	}
+	} 
 }
 
 void check_valid_buffer (void* buffer, unsigned size) {
