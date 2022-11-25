@@ -153,22 +153,24 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-   // Region Demand Paging
-	if (user == false || is_kernel_vaddr(fault_addr)) {
-		// Test 중 Kernel Panic 처리
-		// User Program이 Kernel을 참조하면 해당 프로그램을 종료
-		force_exit();
-	}
-   // Endregion
-
    if (not_present) {
       struct page_header* header = find_header(fault_addr);
       if (header != NULL) {
          if (handle_mm_fault(header)) {
             return;
          }
+      } else {
+         force_exit();
       }
    }
+
+	if (user == false || is_kernel_vaddr(fault_addr)) {
+		// Test 중 Kernel Panic 처리
+		// User Program이 Kernel을 참조하면 해당 프로그램을 종료
+      // printf("FAULT BY USER OR is_kernel_vaddr\n");
+		force_exit();
+	}
+
    // 정상적으로 Page를 할당하지 못했다면 강제 종료
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
