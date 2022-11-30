@@ -1,3 +1,6 @@
+#ifndef PAGE_H
+
+#define PAGE_H
 #include <stdio.h>
 #include <stdint.h>
 #include <hash.h>
@@ -19,7 +22,7 @@ struct page_header {
 
     void* address;
 
-    off_t offest;
+    off_t offset;
     uint32_t read_bytes;
     uint32_t zero_bytes;
 
@@ -28,6 +31,13 @@ struct page_header {
     char* file_name;
 
     struct hash_elem elem;
+};
+
+struct page {
+    uint8_t* kaddr;
+    struct page_header* header;
+    struct thread* thread;
+    struct list_elem elem;
 };
 
 void init_page_headers(struct thread* t);
@@ -41,3 +51,5 @@ unsigned page_header_hash (const struct hash_elem* e, void* aux UNUSED);
 bool page_header_less (const struct hash_elem* a, const struct hash_elem* b, void* aux UNUSED);
 
 bool load_file (struct page_header* header, uint8_t *kpage);
+
+#endif

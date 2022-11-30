@@ -21,7 +21,6 @@
 #include "syscall.h"
 #include "vm/page.h"
 
-bool handle_mm_fault(struct page_header* header);
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 void make_stack (void** esp, char* file_name);
@@ -598,7 +597,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
       new->read_bytes = page_read_bytes;
       new->zero_bytes = page_zero_bytes;
-      new->offest = ofs;
+      new->offset = ofs;
 
       new->file_name = (char*)malloc(sizeof(char) * strlen(file_name) + 1);
       strlcpy(new->file_name, file_name, strlen(file_name) + 1);
@@ -642,7 +641,7 @@ setup_stack (void **esp)
     new->address = kpage;
 
     // 이미 install 된 stack page이므로 아래 값들은 필요 없음
-    new->offest = 0;
+    new->offset = 0;
     new->read_bytes = 0;
     new->zero_bytes = 0;
 

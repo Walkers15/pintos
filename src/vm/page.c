@@ -58,15 +58,15 @@ void destory_page_header(struct thread *t) {
 }
 
 bool load_file(struct page_header* header, uint8_t *kpage) {
-    // file_seek(header->fp, header->offest);
+    // file_seek(header->fp, header->offset);
 
     // printf("로드 파일 누구세요? %s %s\n", thread_current()->name, header->file_name);
     /* Load this page. */
     struct file* file = filesys_open(header->file_name);
-    // printf("FILE READ %p %d\n", file, header->offest);
+    // printf("FILE READ %p %d\n", file, header->offset);
     // int read_byte = file_read (header->fp, kpage, header->read_bytes);
     // header->fp->inode = header->inode;
-    int read_byte = file_read_at (file, kpage, header->read_bytes, header->offest);
+    int read_byte = file_read_at (file, kpage, header->read_bytes, header->offset);
     if (read_byte != (int) header->read_bytes) {
         // printf("file read 실패 ㅠㅠ %d %d\n", read_byte, header->read_bytes);
         palloc_free_page (kpage);
