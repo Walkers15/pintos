@@ -37,7 +37,7 @@
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
 #endif
-
+#include "vm/swap.h"
 /* Page directory with kernel mappings only. */
 uint32_t *init_page_dir;
 
@@ -89,7 +89,6 @@ main (void)
      then enable console locking. */
   thread_init ();
   console_init ();  
-
   /* Greet user. */
   printf ("Pintos booting with %'"PRIu32" kB RAM...\n",
           init_ram_pages * PGSIZE / 1024);
@@ -114,7 +113,7 @@ main (void)
   exception_init ();
   syscall_init ();
 #endif
-
+  swap_init();
   /* Start thread scheduler and enable interrupts. */
   thread_start ();
   serial_init_queue ();

@@ -26,9 +26,9 @@ struct page_header {
     uint32_t read_bytes;
     uint32_t zero_bytes;
 
-    uint32_t swap;
+    size_t swap;
 
-    char* file_name;
+    struct file* fp;
 
     struct hash_elem elem;
 };

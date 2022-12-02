@@ -20,6 +20,8 @@
 #include "threads/malloc.h"
 #include "syscall.h"
 #include "vm/page.h"
+#include "vm/swap.h"
+#include "vm/frame.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -265,7 +267,7 @@ static bool setup_stack (void **esp);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
-                          bool writable, char* file_name);
+                          bool writable);
 
 /* Loads an ELF executable from FILE_NAME into the current thread.
    Stores the executable's entry point into *EIP
@@ -369,7 +371,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
               if (!load_segment (file, file_page, (void *) mem_page,
-                                 read_bytes, zero_bytes, writable, instruction_name))
+                                 read_bytes, zero_bytes, writable))
                 goto done;
             }
           else
@@ -394,10 +396,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  // file_close (file);
 
-	if(sizeof(origin_file_name) > 0) {
-	}
   // printf("LOAD SUCCESS? %d\n", success);
   return success;
 }
@@ -544,7 +544,7 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
    or disk read error occurs. */
 static bool
 load_segment (struct file *file, off_t ofs, uint8_t *upage,
-              uint32_t read_bytes, uint32_t zero_bytes, bool writable, char* file_name) 
+              uint32_t read_bytes, uint32_t zero_bytes, bool writable) 
 {
   ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
   ASSERT (pg_ofs (upage) == 0);
@@ -592,15 +592,15 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       new->address = upage;
 
       // printf("LOAD SEGMENT FILE %p %p\n", file, file->inode);
-      // new->fp = file;
+      new->fp = file;
       // new->inode = file->inode;
 
       new->read_bytes = page_read_bytes;
       new->zero_bytes = page_zero_bytes;
       new->offset = ofs;
 
-      new->file_name = (char*)malloc(sizeof(char) * strlen(file_name) + 1);
-      strlcpy(new->file_name, file_name, strlen(file_name) + 1);
+      // new->file_name = (char*)malloc(sizeof(char) * strlen(file_name) + 1);
+      // strlcpy(new->file_name, file_name, strlen(file_name) + 1);
 
       // printf("인서트 해더 파일 누구세요? %s %s\n", t->name, new->file_name);
       insert_header(t, new);
@@ -620,25 +620,25 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp) 
 {
-  uint8_t *kpage;
   bool success = false;
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  if (kpage != NULL) 
+  struct page_header *new = (struct page_header*) malloc(sizeof(struct page_header));
+  struct page* page = alloc_page(PAL_USER | PAL_ZERO, new);
+
+  if (page->kaddr != NULL) 
     {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, page->kaddr, true);
       if (success)
         *esp = PHYS_BASE;
       else
-        palloc_free_page (kpage);
+        free_page(page->kaddr);
     }
   if (success) {
-    struct page_header *new = (struct page_header*) malloc(sizeof(struct page_header));
     new->type = FILE;
     new->loaded = true;
     new->writeable = true;
 
-    new->address = kpage;
+    new->address = page->kaddr;
 
     // 이미 install 된 stack page이므로 아래 값들은 필요 없음
     new->offset = 0;
@@ -671,16 +671,29 @@ install_page (void *upage, void *kpage, bool writable)
 }
 
 bool handle_mm_fault(struct page_header* header) {
+  // printf("Handle MM FAULT\n");
     /* Get a page of memory. */
-    uint8_t *kpage = palloc_get_page (PAL_USER);
-    if (kpage == NULL)
+    struct page* page = alloc_page(PAL_USER, header);
+    // uint8_t *kpage = palloc_get_page (PAL_USER);
+    
+    if (page->kaddr == NULL)
       return false;
 
    if (header->type == FILE) {
-      load_file(header, kpage);
-      return install_page(header->address, kpage, header->writeable);
-   } else {
-      return false;
+      if(!load_file(header, page->kaddr)) {
+        return false;
+      }
+      // printf("LOAD SUCCESS\n");
+      if (!install_page(header->address, page->kaddr, header->writeable)) {
+        free_page(page->kaddr);
+        return false;
+      }
+      // printf("INSTALL SUCCESS\n");
+      return true;
+   } else if (header->type == SWAP) {
+      swap_in(header->swap, page->kaddr);
+      install_page(header->address, page->kaddr, header->writeable);
+      return true;
    }
    return true;
 }
