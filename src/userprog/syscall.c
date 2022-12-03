@@ -177,7 +177,7 @@ syscall_handler (struct intr_frame *f)
 				void* buffer = (void*) *(uintptr_t*)(f->esp + 8);
 				check_valid_pointer(buffer);
 				unsigned size = *(unsigned*)(f->esp + 12);
-				// check_valid_buffer(buffer, size);
+				check_valid_buffer(buffer, size);
 				struct lock* current_lock = get_lock(fp);
 				lock_acquire(current_lock);
 				// printf("READ FILE %d\n", size);
@@ -282,7 +282,7 @@ void check_valid_pointer(const void* ptr) {
 }
 
 void check_valid_buffer (void* buffer, unsigned size) {
-	printf("check_valid_buffer %p\n", buffer);
+	// printf("check_valid_buffer %p\n", buffer);
 	while (size > 0) {
 		check_valid_pointer(buffer);
 		// struct page_header* header = find_header(buffer);
