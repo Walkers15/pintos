@@ -154,12 +154,14 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
 
    if (not_present) {
+      printf("not present: find header %p\n", fault_addr);
       struct page_header* header = find_header(fault_addr);
       if (header != NULL) {
          if (handle_mm_fault(header)) {
             return;
          }
       } else {
+         printf("not present error!\n");
          force_exit();
       }
    }
@@ -167,7 +169,7 @@ page_fault (struct intr_frame *f)
 	if (user == false || is_kernel_vaddr(fault_addr)) {
 		// Test 중 Kernel Panic 처리
 		// User Program이 Kernel을 참조하면 해당 프로그램을 종료
-      // printf("FAULT BY USER OR is_kernel_vaddr\n");
+      printf("FAULT BY USER OR is_kernel_vaddr\n");
 		force_exit();
 	}
 
@@ -180,6 +182,6 @@ page_fault (struct intr_frame *f)
           not_present ? "not present" : "rights violation",
           write ? "writing" : "reading",
           user ? "user" : "kernel");
-  kill (f);
+  // kill (f);
    
 }

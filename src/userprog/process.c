@@ -105,6 +105,7 @@ start_process (void *file_name_)
 		thread_current()->load_status = -1;
 		sema_up(&(thread_current()->load));
 		// thread_exit();
+    printf("SASDASD\n");
 		force_exit();
 	} else {
 		sema_up(&(thread_current()->load));
@@ -628,6 +629,7 @@ setup_stack (void **esp)
   if (page->kaddr != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, page->kaddr, true);
+      printf("괙괙괙\n");
       if (success)
         *esp = PHYS_BASE;
       else
@@ -644,7 +646,7 @@ setup_stack (void **esp)
     new->offset = 0;
     new->read_bytes = 0;
     new->zero_bytes = 0;
-
+    printf("insert stack header %p\n", new->address);
     insert_header(thread_current(), new);
   }
   return success;
@@ -671,11 +673,9 @@ install_page (void *upage, void *kpage, bool writable)
 }
 
 bool handle_mm_fault(struct page_header* header) {
-  // printf("Handle MM FAULT\n");
     /* Get a page of memory. */
     struct page* page = alloc_page(PAL_USER, header);
     // uint8_t *kpage = palloc_get_page (PAL_USER);
-    
     if (page->kaddr == NULL)
       return false;
 

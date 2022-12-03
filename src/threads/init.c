@@ -113,7 +113,6 @@ main (void)
   exception_init ();
   syscall_init ();
 #endif
-  swap_init();
   /* Start thread scheduler and enable interrupts. */
   thread_start ();
   serial_init_queue ();
@@ -125,7 +124,7 @@ main (void)
   locate_block_devices ();
   filesys_init (format_filesys);
 #endif
-
+  swap_init();
   printf ("Boot complete.\n");
   
   /* Run actions specified on kernel command line. */

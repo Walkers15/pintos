@@ -62,6 +62,7 @@ void
 block_set_role (enum block_type role, struct block *block)
 {
   ASSERT (role < BLOCK_ROLE_CNT);
+  printf("BLOCK SET ROLE %d\n", role);
   block_by_role[role] = block;
 }
 
