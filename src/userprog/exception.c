@@ -11,7 +11,7 @@
 #include "vm/page.h"
 
 #define STACK_LIMIT (PHYS_BASE - 8 * 1024 * 1024)
-
+#define STACK_ACCESS_HEURISTIC 32
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
@@ -164,9 +164,8 @@ page_fault (struct intr_frame *f)
          }
       }
       // printf("not present error!\n");
-      if (fault_addr >= STACK_LIMIT) {
-         // printf("grow stack!");
-         // is_user_vaddr(pg_round_down(fault_addr)) && fault_addr>=esp - 32 && 
+      if (fault_addr>=f->esp - STACK_ACCESS_HEURISTIC && fault_addr >= STACK_LIMIT) {
+         // printf("grow stack!\n");
          grow_stack(fault_addr);
          return;
       }
