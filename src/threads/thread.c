@@ -308,12 +308,12 @@ thread_exit (void)
 		for (int i = 0; i < 10000000; i++) {}
 	}
 	*/
-	// printf("wait sema up %d\n", thread_current()->tid);
+	printf("wait sema up %d\n", thread_current()->tid);
 	sema_up(&thread_current()->wait);
 	// if (thread_current()->post_process.value == 
-	// printf("wait sema up2\n");
+	printf("wait sema up2\n");
 	sema_down(&thread_current()->post_process);
-	// printf("부모가 날 처리했습니다\n");
+	printf("부모가 날 처리했습니다\n");
   /* Remove thread from all threads list, set our status to dying,
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */

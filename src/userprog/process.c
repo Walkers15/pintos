@@ -181,7 +181,7 @@ process_exit (void)
          that's been freed (and cleared). */
       cur->pagedir = NULL;
       pagedir_activate (NULL);
-      pagedir_destroy (pd);
+      // pagedir_destroy (pd);
     }
 }
 

@@ -60,6 +60,7 @@ syscall_handler (struct intr_frame *f)
 			}
 			free(ofile);
 			thread_current()->exit_status = status;
+			printf("SYS EXIT DONE\n");
 			thread_exit();
 			break;
 		}
