@@ -276,22 +276,27 @@ syscall_handler (struct intr_frame *f)
 }
 
 void check_valid_pointer(const void* ptr) {
+	// printf("check_valid_pointer %p\n", ptr);
 	if(is_user_vaddr(ptr) == false) {
 		force_exit();
 	}
 }
 
 void check_valid_buffer (void* buffer, unsigned size) {
-	// printf("check_valid_buffer %p\n", buffer);
-	while (size > 0) {
+	while ((int)size > 0) {
+		// printf("check_valid_buffer %p %d\n", buffer, size);
 		check_valid_pointer(buffer);
-		// struct page_header* header = find_header(buffer);
-		// if(header->writeable == false) {
-		// 	force_exit();
-		// }
+		struct page_header* header = find_header(buffer);
+		if(header != NULL && header->writeable == false) {
+			force_exit();
+		} else if (header == NULL) {
+			// printf("header null\n");
+			force_exit();
+		}
 		size -= PGSIZE;
 		buffer += PGSIZE;
 	}
+	// printf("done\n");
 }
 
 void force_exit() {
