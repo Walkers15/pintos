@@ -105,7 +105,7 @@ start_process (void *file_name_)
 		thread_current()->load_status = -1;
 		sema_up(&(thread_current()->load));
 		// thread_exit();
-    printf("SASDASD\n");
+    // printf("SASDASD\n");
 		force_exit();
 	} else {
 		sema_up(&(thread_current()->load));
@@ -629,14 +629,13 @@ setup_stack (void **esp)
   if (page->kaddr != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, page->kaddr, true);
-      printf("괙괙괙\n");
       if (success)
         *esp = PHYS_BASE;
       else
         free_page(page->kaddr);
     }
   if (success) {
-    new->type = FILE;
+    new->type = SWAP;
     new->loaded = true;
     new->writeable = true;
 
@@ -646,7 +645,7 @@ setup_stack (void **esp)
     new->offset = 0;
     new->read_bytes = 0;
     new->zero_bytes = 0;
-    printf("insert stack header %p\n", new->address);
+    // printf("insert stack header %p\n", new->address);
     insert_header(thread_current(), new);
   }
   return success;
@@ -696,4 +695,34 @@ bool handle_mm_fault(struct page_header* header) {
       return true;
    }
    return true;
+}
+
+bool grow_stack(void* addr) {
+  bool success = false;
+
+  struct page_header *new = malloc(sizeof(struct page_header));
+	struct page *page = alloc_page(PAL_USER | PAL_ZERO, new);
+  
+  if (page->kaddr != NULL) {
+    success = install_page (pg_round_down(addr), page->kaddr, true);
+  }
+
+  if (success) {
+    // 이미 install 된 stack page이므로 아래 값들은 필요 없음
+    new->type = SWAP;
+    new->loaded = true;
+    new->writeable = true;
+
+    new->address = pg_round_down(addr);
+
+    new->offset = 0;
+    new->read_bytes = 0;
+    new->zero_bytes = 0;
+    // printf("insert stack header %p\n", new->address);
+    insert_header(thread_current(), new);
+  } else {
+    free_page(page->kaddr);
+		free(new);
+  }
+  return success;
 }

@@ -60,7 +60,7 @@ syscall_handler (struct intr_frame *f)
 			}
 			free(ofile);
 			thread_current()->exit_status = status;
-			printf("SYS EXIT DONE\n");
+			// printf("SYS EXIT DONE\n");
 			thread_exit();
 			break;
 		}
@@ -93,7 +93,6 @@ syscall_handler (struct intr_frame *f)
 				check_valid_pointer(file);
 				unsigned initial_size = *(unsigned*)(f->esp + 8);
 				if (file == NULL) {
-					printf("asdf\n");
 					force_exit();
 				}
 				// printf("%s %d\n", file, initial_size);
@@ -106,7 +105,6 @@ syscall_handler (struct intr_frame *f)
 				check_valid_pointer(f->esp + 4);
 				const char* file = *(char**)(f->esp + 4);
 				if (file == NULL) {
-					printf("asd\n");
 					force_exit();
 				}
 				check_valid_pointer(file);
@@ -170,7 +168,7 @@ syscall_handler (struct intr_frame *f)
 			check_valid_pointer(f-> esp + 4);
 			check_valid_pointer(f-> esp + 8);
 			check_valid_pointer(f-> esp + 12);
-			printf("READ!!\n");
+			// printf("READ!!\n");
 			int fd = *(int*) (f-> esp + 4);
 			if (fd == 0) {
 				input_getc();
@@ -279,7 +277,6 @@ syscall_handler (struct intr_frame *f)
 
 void check_valid_pointer(const void* ptr) {
 	if(is_user_vaddr(ptr) == false) {
-		printf("asd\n");
 		force_exit();
 	}
 }
@@ -298,7 +295,7 @@ void check_valid_buffer (void* buffer, unsigned size) {
 }
 
 void force_exit() {
-	printf("Force Exit!\n");
+	// printf("Force Exit!\n");
 	// System Call Handler 를 강제로 종료시킨다.
 	// abnormal way로 종료되었으므로 exit code는 -1이다.
 	printf("%s: exit(%d)\n", thread_current()->name, -1);
@@ -320,7 +317,6 @@ struct file* get_fp_from_fd(int fd) {
 	// printf("get fp from fd %d %d\n", fd, sizeof(ofile));
 	struct file* f = ofile[fd];
 	if (f == NULL) {
-		printf("f null\n");
 		force_exit();
 	}
 	return f;

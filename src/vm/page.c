@@ -29,7 +29,7 @@ void init_page_headers(struct thread* t) {
 }
 
 bool insert_header(struct thread* t, struct page_header* ph) {
-    printf("INSERT HEADER %p\n", ph->address);
+    // printf("INSERT HEADER %p\n", ph->address);
     hash_insert(&t->page_headers, &ph->elem);
     // printf("INSERT HEADER 123 \n");
     return hash_find(&t->page_headers, &ph->elem) != NULL;

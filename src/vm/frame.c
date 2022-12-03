@@ -19,13 +19,13 @@ struct page* alloc_page(enum palloc_flags flags, struct page_header* header) {
 	/* Get a page of memory. */
 	uint8_t *kpage = palloc_get_page (flags);
 	if (kpage == NULL) {
-		printf("NO LEFT PAGE:: DO EVICT\n");
+		// printf("NO LEFT PAGE:: DO EVICT\n");
 		page_replacement();
 		kpage = palloc_get_page (flags);
 	}
 
 	struct page* page = (struct page*) malloc(sizeof(struct page));
-	printf("palloc get page %p\n", kpage);
+	// printf("palloc get page %p\n", kpage);
 	page->kaddr = kpage;
 	page->header = header;
 	page->thread = thread_current();
@@ -41,7 +41,7 @@ void free_page(uint8_t* kaddr) {
 		page = list_entry(page_ptr, struct page, elem);
 		if (page->kaddr == kaddr) {
 			list_remove(&page->elem);
-			printf("free page\n");
+			// printf("free page\n");
 			palloc_free_page(page->kaddr);
 			free(page);
 			break;
@@ -67,15 +67,15 @@ void page_replacement(void) {
 			pagedir_set_accessed(page->thread->pagedir, page->header->address, false);
 			continue;
 		} else {
-			printf("Victim Selected... %p\n", page->header->address);
+			// printf("Victim Selected... %p\n", page->header->address);
 			if (pagedir_is_dirty(page->thread->pagedir, page->header->address) && page->header->fp != NULL) {
-				printf("page is dirty\n");
+				// printf("page is dirty\n");
 				file_read_at(page->header->fp, page->kaddr, page->header->read_bytes, page->header->offset);
 			}
 			page->header->type = SWAP;
-			printf("SWAP OUT\n");
+			// printf("SWAP OUT\n");
 			page->header->swap = swap_out(page->kaddr);
-			printf("DONE\n");
+			// printf("DONE\n");
 			break;
 		}
 	}
