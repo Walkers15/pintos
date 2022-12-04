@@ -166,7 +166,9 @@ process_exit (void)
   uint32_t *pd;
 
   destory_page_header(cur);
-
+  printf("free thread page\n");
+  // free_thread_page(cur);
+  printf("free thread done\n");
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -181,7 +183,7 @@ process_exit (void)
          that's been freed (and cleared). */
       cur->pagedir = NULL;
       pagedir_activate (NULL);
-      // pagedir_destroy (pd);
+      pagedir_destroy (pd);
     }
 }
 
@@ -624,7 +626,7 @@ setup_stack (void **esp)
   bool success = false;
 
   struct page_header *new = (struct page_header*) malloc(sizeof(struct page_header));
-  struct page* page = alloc_page(PAL_USER | PAL_ZERO, new);
+  struct page* page = alloc_page(PAL_USER | PAL_ZERO, new, true);
 
   if (page->kaddr != NULL) 
     {
@@ -673,8 +675,7 @@ install_page (void *upage, void *kpage, bool writable)
 
 bool handle_mm_fault(struct page_header* header) {
     /* Get a page of memory. */
-    struct page* page = alloc_page(PAL_USER, header);
-    // uint8_t *kpage = palloc_get_page (PAL_USER);
+    struct page* page = alloc_page(PAL_USER, header, false);
     if (page->kaddr == NULL)
       return false;
 
@@ -701,7 +702,7 @@ bool grow_stack(void* addr) {
   bool success = false;
 
   struct page_header *new = malloc(sizeof(struct page_header));
-	struct page *page = alloc_page(PAL_USER | PAL_ZERO, new);
+	struct page *page = alloc_page(PAL_USER | PAL_ZERO, new, true);
   
   if (page->kaddr != NULL) {
     success = install_page (pg_round_down(addr), page->kaddr, true);

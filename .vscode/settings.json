@@ -30,6 +30,8 @@
         "page.h": "c",
         "interrupt.h": "c",
         "palloc.h": "c",
-        "file.h": "c"
+        "file.h": "c",
+        "cstdlib": "c",
+        "memory": "c"
     }
 }

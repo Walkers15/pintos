@@ -38,6 +38,7 @@ struct page {
     struct page_header* header;
     struct thread* thread;
     struct list_elem elem;
+    bool is_stack;
 };
 
 void init_page_headers(struct thread* t);
