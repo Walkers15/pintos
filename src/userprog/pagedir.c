@@ -58,14 +58,14 @@ pagedir_destroy (uint32_t *pd)
               free_list = realloc(free_list, list_size + 500);
               list_size += 500;
             }
-            printf("free page %d\n", *pte);
+            // printf("free page %d\n", *pte);
             palloc_free_page (pte_get_page (*pte));
           }
         }
-        printf("free page pt %p\n", pt);
+        // printf("free page pt %p\n", pt);
         palloc_free_page (pt);
       }
-  printf("free page pd %p\n", pd);
+  // printf("free page pd %p\n", pd);
   palloc_free_page (pd);
   free(free_list);
 }

@@ -166,9 +166,9 @@ process_exit (void)
   uint32_t *pd;
 
   destory_page_header(cur);
-  printf("free thread page\n");
+  // printf("free thread page\n");
   // free_thread_page(cur);
-  printf("free thread done\n");
+  // printf("free thread done\n");
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

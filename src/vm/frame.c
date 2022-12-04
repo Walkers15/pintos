@@ -73,15 +73,15 @@ void page_replacement(void) {
 	while(true) {
 		struct list_elem* page_ptr = get_next_page();
 		struct page* page = list_entry(page_ptr, struct page, elem);
-		printf("page replacement %p %s %d\n", page->header->address, thread_current()->name, page->thread->status);
-		// if (thread_current() != page->thread) { continue; }
+		// printf("page replacement %p %s %d\n", page->header->address, thread_current()->name, page->thread->status);
+		if (thread_current() != page->thread) { continue; }
 		if (page->is_stack) { continue; }
 		bool accessed = pagedir_is_accessed(page->thread->pagedir, page->header->address);
 		if (accessed) {
 			pagedir_set_accessed(page->thread->pagedir, page->header->address, false);
 			continue;
 		} else {
-			printf("Victim Selected... %p\n", page->header->address);
+			// printf("Victim Selected... %p\n", page->header->address);
 			if (pagedir_is_dirty(page->thread->pagedir, page->header->address) && page->header->fp != NULL) {
 				// printf("page is dirty\n");
 				file_read_at(page->header->fp, page->kaddr, page->header->read_bytes, page->header->offset);
