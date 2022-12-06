@@ -51,6 +51,4 @@ void destory_page_header(struct thread *t);
 unsigned page_header_hash (const struct hash_elem* e, void* aux UNUSED);
 bool page_header_less (const struct hash_elem* a, const struct hash_elem* b, void* aux UNUSED);
 
-bool load_file (struct page_header* header, uint8_t *kpage);
-
 #endif

@@ -57,28 +57,3 @@ struct page_header* find_header(const void* address) {
 void destory_page_header(struct thread *t) {
     hash_destroy(&t->page_headers, NULL);
 }
-
-bool load_file(struct page_header* header, uint8_t *kpage) {
-    // file_seek(header->fp, header->offset);
-
-    // printf("로드 파일 누구세요? %s %s\n", thread_current()->name, header->file_name);
-    /* Load this page. */
-    // struct file* file = filesys_open(header->file_name);
-    // printf("FILE READ %p %d\n", file, header->offset);
-    // int read_byte = file_read (header->fp, kpage, header->read_bytes);
-    // header->fp->inode = header->inode;
-    int read_byte = file_read_at (header->fp, kpage, header->read_bytes, header->offset);
-    if (read_byte != (int) header->read_bytes) {
-        // printf("file read 실패 ㅠㅠ %d %d\n", read_byte, header->read_bytes);
-        free_page (kpage);
-        return false; 
-    }
-    memset (kpage + header->read_bytes, 0, header->zero_bytes);
-
-    // /* Add the page to the process's address space. */
-    // if (!install_page (header->address, kpage, header->writeable)) {
-    //     palloc_free_page (kpage);
-    //     return false; 
-    // }
-    return true;
-}

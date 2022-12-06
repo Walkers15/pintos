@@ -27,6 +27,8 @@ static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 void make_stack (void** esp, char* file_name);
 struct thread* find_child_thread(tid_t tid);
+bool load_file(struct page_header* header, uint8_t *kpage);
+
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
@@ -671,6 +673,17 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
+}
+
+bool load_file(struct page_header* header, uint8_t *kpage) {
+    // file_seek(header->fp, header->offset);
+    int read_byte = file_read_at (header->fp, kpage, header->read_bytes, header->offset);
+    if (read_byte != (int) header->read_bytes) {
+        free_page (kpage);
+        return false; 
+    }
+    memset (kpage + header->read_bytes, 0, header->zero_bytes);
+    return true;
 }
 
 bool handle_mm_fault(struct page_header* header) {
