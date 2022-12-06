@@ -17,14 +17,7 @@ static struct lock swap_lock;
 void swap_init() {
 	// printf("swap init!!\n");
 	swap_device = block_get_role (BLOCK_SWAP);
-	if (swap_device == NULL) {
-		swap_bitmap = bitmap_create (0);
-	} else {
-		swap_bitmap = bitmap_create (block_size (swap_device) / PAGE_SECTORS);
-	}
-	if (swap_bitmap == NULL) {
-		PANIC ("couldn't create swap bitmap");
-	}
+	swap_bitmap = bitmap_create (block_size (swap_device) / PAGE_SECTORS);
 	// printf("swap init!!2\n");
 	lock_init (&swap_lock);
 	page_list_init();
