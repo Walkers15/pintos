@@ -83,8 +83,8 @@ void page_replacement(void) {
 		} else {
 			// printf("Victim Selected... %p\n", page->header->address);
 			if (pagedir_is_dirty(page->thread->pagedir, page->header->address) && page->header->fp != NULL) {
-				// printf("page is dirty\n");
-				file_read_at(page->header->fp, page->kaddr, page->header->read_bytes, page->header->offset);
+				printf("page is dirty\n");
+				file_write_at(page->header->fp, page->kaddr, page->header->read_bytes, page->header->offset);
 			}
 			page->header->type = SWAP;
 			// printf("SWAP OUT\n");
