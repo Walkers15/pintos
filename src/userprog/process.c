@@ -736,7 +736,7 @@ bool grow_stack(void* addr) {
     insert_header(thread_current(), new);
   } else {
     free_page(page->kaddr);
-		free(new);
+	free(new);
   }
   return success;
 }
