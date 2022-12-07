@@ -604,10 +604,6 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       new->zero_bytes = page_zero_bytes;
       new->offset = ofs;
 
-      // new->file_name = (char*)malloc(sizeof(char) * strlen(file_name) + 1);
-      // strlcpy(new->file_name, file_name, strlen(file_name) + 1);
-
-      // printf("인서트 해더 파일 누구세요? %s %s\n", t->name, new->file_name);
       insert_header(t, new);
 
       /* Advance. */
