@@ -6,12 +6,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "syscall.h"
-#include "threads/palloc.h"
-#include "userprog/process.h"
-#include "vm/page.h"
 
-#define STACK_LIMIT (PHYS_BASE - 8 * 1024 * 1024)
-#define STACK_ACCESS_HEURISTIC 32
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
@@ -130,7 +125,7 @@ static void
 page_fault (struct intr_frame *f) 
 {
   bool not_present;  /* True: not-present page, false: writing r/o page. */
-  // bool write;        /* True: access was write, false: access was read. */
+  bool write;        /* True: access was write, false: access was read. */
   bool user;         /* True: access by user, false: access by kernel. */
   void *fault_addr;  /* Fault address. */
 
@@ -152,42 +147,26 @@ page_fault (struct intr_frame *f)
 
   /* Determine cause. */
   not_present = (f->error_code & PF_P) == 0;
-  // write = (f->error_code & PF_W) != 0;
+  write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-   if (not_present) {
-      // printf("not present: find header %p\n", fault_addr);
-      struct page_header* header = find_header(fault_addr);
-      if (header != NULL) {
-         if (handle_mm_fault(header)) {
-            return;
-         }
-      }
-      // printf("not present error!\n");
-      if (fault_addr>=f->esp - STACK_ACCESS_HEURISTIC && fault_addr >= STACK_LIMIT) {
-         // printf("grow stack!\n");
-         grow_stack(fault_addr);
-         return;
-      }
-      force_exit();
-   }
-
-	if (user == false || is_kernel_vaddr(fault_addr)) {
+	if (user == false || not_present == true || is_kernel_vaddr(fault_addr)) {
 		// Test 중 Kernel Panic 처리
 		// User Program이 Kernel을 참조하면 해당 프로그램을 종료
-      // printf("FAULT BY USER OR is_kernel_vaddr\n");
 		force_exit();
+		// printf("%s: exit(%d)\n", thread_current()->name, -1); 
+		// thread_current()->exit_status = -1;
+		// thread_exit();
 	}
 
-   // 정상적으로 Page를 할당하지 못했다면 강제 종료
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
-  // printf ("Page fault at %p: %s error %s page in %s context.\n",
-         //  fault_addr,
-         //  not_present ? "not present" : "rights violation",
-         //  write ? "writing" : "reading",
-         //  user ? "user" : "kernel");
-  // kill (f);
-   force_exit();
+  printf ("Page fault at %p: %s error %s page in %s context.\n",
+          fault_addr,
+          not_present ? "not present" : "rights violation",
+          write ? "writing" : "reading",
+          user ? "user" : "kernel");
+  kill (f);
 }
+

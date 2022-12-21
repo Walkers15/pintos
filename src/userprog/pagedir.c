@@ -5,9 +5,6 @@
 #include "threads/init.h"
 #include "threads/pte.h"
 #include "threads/palloc.h"
-#include <stdio.h>
-#include <list.h>
-#include "threads/malloc.h"
 
 static uint32_t *active_pd (void);
 static void invalidate_pagedir (uint32_t *);
@@ -31,10 +28,7 @@ void
 pagedir_destroy (uint32_t *pd) 
 {
   uint32_t *pde;
-  uint32_t *free_list = NULL;
-  free_list = (uint32_t*) malloc(sizeof(uint32_t) * 500);
-  int free_index = 0;
-  int list_size = 500;
+
   if (pd == NULL)
     return;
 
@@ -44,30 +38,13 @@ pagedir_destroy (uint32_t *pd)
       {
         uint32_t *pt = pde_get_pt (*pde);
         uint32_t *pte;
-        for (pte = pt; pte < pt + PGSIZE / sizeof *pte; pte++) {
-          bool is_freed = false;
-          for (int i = 0; i < free_index; i++) {
-            if (free_list[i] == *pte) {
-              is_freed = true;
-            }
-          }
-          if (*pte & PTE_P && is_freed == false) {
-            free_list[free_index] = *pte;
-            free_index++;
-            if(list_size == free_index) {
-              free_list = realloc(free_list, list_size + 500);
-              list_size += 500;
-            }
-            // printf("free page %d\n", *pte);
+        
+        for (pte = pt; pte < pt + PGSIZE / sizeof *pte; pte++)
+          if (*pte & PTE_P) 
             palloc_free_page (pte_get_page (*pte));
-          }
-        }
-        // printf("free page pt %p\n", pt);
         palloc_free_page (pt);
       }
-  // printf("free page pd %p\n", pd);
   palloc_free_page (pd);
-  free(free_list);
 }
 
 /* Returns the address of the page table entry for virtual

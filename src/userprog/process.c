@@ -19,16 +19,11 @@
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
 #include "syscall.h"
-#include "vm/page.h"
-#include "vm/swap.h"
-#include "vm/frame.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 void make_stack (void** esp, char* file_name);
 struct thread* find_child_thread(tid_t tid);
-bool load_file(struct page_header* header, uint8_t *kpage);
-
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
@@ -97,6 +92,7 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (file_name, &if_.eip, &if_.esp);
 	thread_current()->load_status = 1;
+	// printf("sema up!! %d\n", thread_current()->tid);
 	// printf("%d %s load done!!!\n",thread_current()->tid, file_name);
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -107,12 +103,10 @@ start_process (void *file_name_)
 		thread_current()->load_status = -1;
 		sema_up(&(thread_current()->load));
 		// thread_exit();
-    // printf("SASDASD\n");
 		force_exit();
 	} else {
 		sema_up(&(thread_current()->load));
 	}
-  // printf("START USER PROGORAM!\n");
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
@@ -152,11 +146,28 @@ process_wait (tid_t child_tid)
 	if (child == NULL) {
 		return -1;
 	}
+	// printf("child TID123! %d %d\n", child->tid, child->status);
 	sema_down(&child->wait);
+	// printf("child TID! %d %d\n", child->tid, child->status);
 	exit_status = child->exit_status;
 	list_remove(&(child->child_elem));
+	// printf("child Wait to DIE! %d %d Exit Code %d\n", child->tid, child->status, child->exit_status);
 	sema_up(&child->post_process);
 
+	/*
+	while(child->status >= 0 && child->status <= 5) {
+		// printf("child TID! %d %d %d\n", child->tid, child->status, child->child_status);
+		if (child->child_status == 2) {
+			printf("child Wait to DIE! %d %d Exit Code %d\n", child->tid, child->status, child->exit_status);
+			exit_status = child->exit_status;
+			list_remove(&(child->child_elem));
+			child->child_status = 3;		
+		}
+		for (int i = 0; i < 10000000; i++){}
+	}
+	*/
+
+	// printf("exit status is %d\n", exit_status);
 	return exit_status;
 }
 
@@ -167,10 +178,6 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
-  destory_page_header(cur);
-  // printf("free thread page\n");
-  // free_thread_page(cur);
-  // printf("free thread done\n");
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -385,13 +392,12 @@ load (const char *file_name, void (**eip) (void), void **esp)
         }
     }
 
-  // printf("SETUP STACK\n");
   /* Set up stack. */
   if (!setup_stack (esp)){
 		free(origin_file_name);
     goto done;
 	}
-  // printf("SETUP STACK DONE\n");
+
   // 여기서 stack을 만든다!
   make_stack(esp, origin_file_name);
   /* Start address. */
@@ -401,9 +407,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  // file_close (file);
+  file_close (file);
 
-  // printf("LOAD SUCCESS? %d\n", success);
+	if(sizeof(origin_file_name) > 0) {
+	}
   return success;
 }
 
@@ -556,9 +563,6 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT (ofs % PGSIZE == 0);
 
   file_seek (file, ofs);
-
-  struct thread *t = thread_current();
-    // printf("LOAD SEGMENT\n"); 
   while (read_bytes > 0 || zero_bytes > 0) 
     {
       /* Calculate how to fill this page.
@@ -567,52 +571,31 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
-      // /* Get a page of memory. */
-      // uint8_t *kpage = palloc_get_page (PAL_USER);
-      // if (kpage == NULL)
-      //   return false;
+      /* Get a page of memory. */
+      uint8_t *kpage = palloc_get_page (PAL_USER);
+      if (kpage == NULL)
+        return false;
 
-      // /* Load this page. */
-      // int read = file_read (file, kpage, page_read_bytes);
-      // printf("LOAD SEGMENT FILE READ %p %p %d %d\n", file, kpage, page_read_bytes, read);
-      // if (read != (int) page_read_bytes)
-      //   {
-      //     palloc_free_page (kpage);
-      //     return false; 
-      //   }
-      // memset (kpage + page_read_bytes, 0, page_zero_bytes);
+      /* Load this page. */
+      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
+        {
+          palloc_free_page (kpage);
+          return false; 
+        }
+      memset (kpage + page_read_bytes, 0, page_zero_bytes);
 
-      // /* Add the page to the process's address space. */
-      // if (!install_page (upage, kpage, writable)) 
-      //   {
-      //     palloc_free_page (kpage);
-      //     return false; 
-      //   }
-
-      struct page_header* new = (struct page_header*) malloc(sizeof(struct page_header));
-      new->type = FILE;
-      new->loaded = false;
-      new->writeable = writable;
-      
-      new->address = upage;
-
-      // printf("LOAD SEGMENT FILE %p %p\n", file, file->inode);
-      new->fp = file;
-      // new->inode = file->inode;
-
-      new->read_bytes = page_read_bytes;
-      new->zero_bytes = page_zero_bytes;
-      new->offset = ofs;
-
-      insert_header(t, new);
+      /* Add the page to the process's address space. */
+      if (!install_page (upage, kpage, writable)) 
+        {
+          palloc_free_page (kpage);
+          return false; 
+        }
 
       /* Advance. */
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
-      ofs += page_read_bytes;
       upage += PGSIZE;
     }
-  // printf("LOAD SEGMENT DONE\n"); 
   return true;
 }
 
@@ -621,33 +604,18 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp) 
 {
+  uint8_t *kpage;
   bool success = false;
 
-  struct page_header *new = (struct page_header*) malloc(sizeof(struct page_header));
-  struct page* page = alloc_page(PAL_USER | PAL_ZERO, new, true);
-
-  if (page->kaddr != NULL) 
+  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+  if (kpage != NULL) 
     {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, page->kaddr, true);
+      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
         *esp = PHYS_BASE;
       else
-        free_page(page->kaddr);
+        palloc_free_page (kpage);
     }
-  if (success) {
-    new->type = SWAP;
-    new->loaded = true;
-    new->writeable = true;
-
-    new->address = page->kaddr;
-
-    // 이미 install 된 stack page이므로 아래 값들은 필요 없음
-    new->offset = 0;
-    new->read_bytes = 0;
-    new->zero_bytes = 0;
-    // printf("insert stack header %p\n", new->address);
-    insert_header(thread_current(), new);
-  }
   return success;
 }
 
@@ -669,70 +637,4 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
-}
-
-bool load_file(struct page_header* header, uint8_t *kpage) {
-    // file_seek(header->fp, header->offset);
-    int read_byte = file_read_at (header->fp, kpage, header->read_bytes, header->offset);
-    if (read_byte != (int) header->read_bytes) {
-        free_page (kpage);
-        return false; 
-    }
-    memset (kpage + header->read_bytes, 0, header->zero_bytes);
-    return true;
-}
-
-bool handle_mm_fault(struct page_header* header) {
-    /* Get a page of memory. */
-    struct page* page = alloc_page(PAL_USER, header, false);
-    if (page->kaddr == NULL)
-      return false;
-
-   if (header->type == FILE) {
-      if(!load_file(header, page->kaddr)) {
-        return false;
-      }
-      // printf("LOAD SUCCESS\n");
-      if (!install_page(header->address, page->kaddr, header->writeable)) {
-        free_page(page->kaddr);
-        return false;
-      }
-      // printf("INSTALL SUCCESS\n");
-      return true;
-   } else if (header->type == SWAP) {
-      swap_in(header->swap, page->kaddr);
-      install_page(header->address, page->kaddr, header->writeable);
-      return true;
-   }
-   return true;
-}
-
-bool grow_stack(void* addr) {
-  bool success = false;
-
-  struct page_header *new = malloc(sizeof(struct page_header));
-	struct page *page = alloc_page(PAL_USER | PAL_ZERO, new, true);
-  
-  if (page->kaddr != NULL) {
-    success = install_page (pg_round_down(addr), page->kaddr, true);
-  }
-
-  if (success) {
-    // 이미 install 된 stack page이므로 아래 값들은 필요 없음
-    new->type = SWAP;
-    new->loaded = true;
-    new->writeable = true;
-
-    new->address = pg_round_down(addr);
-
-    new->offset = 0;
-    new->read_bytes = 0;
-    new->zero_bytes = 0;
-    // printf("insert stack header %p\n", new->address);
-    insert_header(thread_current(), new);
-  } else {
-    free_page(page->kaddr);
-	free(new);
-  }
-  return success;
 }
