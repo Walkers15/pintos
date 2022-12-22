@@ -32,6 +32,8 @@
         "palloc.h": "c",
         "file.h": "c",
         "cstdlib": "c",
-        "memory": "c"
+        "memory": "c",
+        "cache.h": "c",
+        "synch.h": "c"
     }
 }
