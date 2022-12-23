@@ -6,21 +6,40 @@
 #include "filesys/filesys.h"
 #include "filesys/free-map.h"
 #include "threads/malloc.h"
-
+#include "threads/synch.h"
 #include "filesys/cache.h"
 
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
+#define DIRECT_BLOCK_COUNT 124
+#define INDIRECT_BLOCK_COUNT (BLOCK_SECTOR_SIZE / 4)
+
+enum inode_type {
+  DIRECT,
+  INDIRECT,
+  DOUBLE,
+  INVALID
+};
+
+struct sector_type {
+  enum inode_type inode_type;
+  int direct_index;
+  int indirect_index;
+  int double_indirect_index;
+};
 
 /* On-disk inode.
    Must be exactly BLOCK_SECTOR_SIZE bytes long. */
 struct inode_disk
   {
-    block_sector_t start;               /* First data sector. */
+    // block_sector_t start;               /* First data sector. */
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
-    uint32_t unused[125];               /* Not used. */
+    // uint32_t unused[125];               /* Not used. */
+    block_sector_t indirect_block_sector_idx;
+    block_sector_t double_indiret_block_sector_idx;
+    block_sector_t direct_blocks[DIRECT_BLOCK_COUNT];
   };
 
 /* In-memory inode. */
@@ -31,8 +50,39 @@ struct inode
     int open_cnt;                       /* Number of openers. */
     bool removed;                       /* True if deleted, false otherwise. */
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
-    struct inode_disk data;             /* Inode content. */
+    struct lock inode_lock;
   };
+
+struct index_block {
+  block_sector_t blocks[INDIRECT_BLOCK_COUNT];
+};
+
+static void calculate_sector_type(off_t pos, struct sector_type *sector_type) {
+  off_t block_index = pos / BLOCK_SECTOR_SIZE;
+
+  if (block_index < DIRECT_BLOCK_COUNT) {
+    sector_type->inode_type = DIRECT;
+    sector_type->direct_index = block_index;
+
+  } else if (block_index < (DIRECT_BLOCK_COUNT + INDIRECT_BLOCK_COUNT)) {
+    block_index -= DIRECT_BLOCK_COUNT;
+    sector_type->inode_type = INDIRECT;
+    sector_type->indirect_index = block_index;
+
+  } else if (block_index < (DIRECT_BLOCK_COUNT + INDIRECT_BLOCK_COUNT * (INDIRECT_BLOCK_COUNT + 1))) {
+    block_index -= (DIRECT_BLOCK_COUNT + INDIRECT_BLOCK_COUNT);
+    sector_type->inode_type = DOUBLE;
+    sector_type->indirect_index = block_index / INDIRECT_BLOCK_COUNT;
+    sector_type->double_indirect_index = block_index % INDIRECT_BLOCK_COUNT;
+
+  } else {
+    sector_type->inode_type = INVALID;
+  }
+}
+
+void change_file_size (struct inode_disk *disk_inode, off_t old, off_t new) {
+
+}
 
 /* Returns the number of sectors to allocate for an inode SIZE
    bytes long. */
@@ -85,12 +135,23 @@ inode_create (block_sector_t sector, off_t length)
      one sector in size, and you should fix that. */
   ASSERT (sizeof *disk_inode == BLOCK_SECTOR_SIZE);
 
+  // inode_disk 생성
   disk_inode = calloc (1, sizeof *disk_inode);
   if (disk_inode != NULL)
     {
       size_t sectors = bytes_to_sectors (length);
       disk_inode->length = length;
       disk_inode->magic = INODE_MAGIC;
+      // contiguous하지 않아도 되므로 free_map_allocate로 한 block씩 할당하면서 전부 찰때까지 반복
+      for(int i = 0; i < sectors; i++) {
+        block_sector_t* new_sector_idx = 0;
+        if(!free_map_allocate(1, new_sector_idx)) { 
+          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+          return;
+        }
+
+
+      }
       if (free_map_allocate (sectors, &disk_inode->start)) 
         {
           block_write (fs_device, sector, disk_inode);
