@@ -38,7 +38,7 @@ struct inode_disk
     unsigned magic;                     /* Magic number. */
     // uint32_t unused[125];               /* Not used. */
     block_sector_t indirect_block_sector_idx;
-    block_sector_t double_indiret_block_sector_idx;
+    block_sector_t double_indirect_block_sector_idx;
     block_sector_t direct_blocks[DIRECT_BLOCK_COUNT];
   };
 
@@ -72,9 +72,9 @@ static void calculate_sector_type(off_t pos, struct sector_type *sector_type) {
   } else if (block_index < (DIRECT_BLOCK_COUNT + INDIRECT_BLOCK_COUNT * (INDIRECT_BLOCK_COUNT + 1))) {
     block_index -= (DIRECT_BLOCK_COUNT + INDIRECT_BLOCK_COUNT);
     sector_type->inode_type = DOUBLE;
-    sector_type->indirect_index = block_index / INDIRECT_BLOCK_COUNT;
-    sector_type->double_indirect_index = block_index % INDIRECT_BLOCK_COUNT;
-
+    sector_type->double_indirect_index = block_index / INDIRECT_BLOCK_COUNT;
+    sector_type->indirect_index = block_index % INDIRECT_BLOCK_COUNT;
+    
   } else {
     sector_type->inode_type = INVALID;
   }
@@ -142,31 +142,112 @@ inode_create (block_sector_t sector, off_t length)
       size_t sectors = bytes_to_sectors (length);
       disk_inode->length = length;
       disk_inode->magic = INODE_MAGIC;
-      // contiguous하지 않아도 되므로 free_map_allocate로 한 block씩 할당하면서 전부 찰때까지 반복
-      for(int i = 0; i < sectors; i++) {
-        block_sector_t* new_sector_idx = 0;
-        if(!free_map_allocate(1, new_sector_idx)) { 
-          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
-          return;
+      disk_inode->double_indirect_block_sector_idx = 0;
+      disk_inode->indirect_block_sector_idx = 0;
+
+      // contiguous하지 않아도 되므로 한 block씩 할당하면서 전부 찰때까지 반복
+      for (int i = 0; i < sectors; i++) {
+        off_t current_length = 0;
+        if (!allocate_new_block(disk_inode, current_length)) {
+          goto done;
         }
-
-
+        current_length += BLOCK_SECTOR_SIZE;
       }
-      if (free_map_allocate (sectors, &disk_inode->start)) 
+
+      // 업데이트한 정보 inode_disk로 기록
+      block_sector_t* inode_disk_sector;
+      if (free_map_allocate (1, inode_disk_sector)) 
         {
-          block_write (fs_device, sector, disk_inode);
-          if (sectors > 0) 
-            {
-              static char zeros[BLOCK_SECTOR_SIZE];
-              size_t i;
-              
-              for (i = 0; i < sectors; i++) 
-                block_write (fs_device, disk_inode->start + i, zeros);
-            }
+          buffer_cache_write (&inode_disk_sector, disk_inode);
           success = true; 
         } 
       free (disk_inode);
     }
+
+  done:
+  return success;
+}
+
+bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
+  static char zeros[BLOCK_SECTOR_SIZE];
+  bool success = false;
+
+  block_sector_t* new_sector_idx;
+  if(!free_map_allocate(1, new_sector_idx)) {
+    printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+    goto done;
+  }
+
+  buffer_cache_write(&new_sector_idx, zeros);
+
+  current_length += BLOCK_SECTOR_SIZE;
+  struct sector_type current_sector_type;
+  calculate_sector_type(current_length, &current_sector_type);
+
+  switch(current_sector_type.inode_type) {
+    case DIRECT:
+      // direct_blocks 배열에 바로 할당 (0 ~ 122)
+      disk_inode->direct_blocks[current_sector_type.direct_index] = &new_sector_idx;
+      break;
+    
+    case INDIRECT:
+      // INDIRECT 인 경우 INDEX BLOCK 읽어오기 (없으면 할당)
+      if (disk_inode->indirect_block_sector_idx == 0) {
+        block_sector_t* index_sector = 0;
+        if (!free_map_allocate(1, index_sector)) { 
+          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+          goto done;
+        }
+        disk_inode->indirect_block_sector_idx = &index_sector;
+        buffer_cache_write(&index_sector, zeros);
+      }
+
+      struct index_block* indirect_block = malloc(BLOCK_SECTOR_SIZE);
+      buffer_cache_read(disk_inode->indirect_block_sector_idx, indirect_block, 0, BLOCK_SECTOR_SIZE, 0);
+
+
+      // 해당 INDEX 블록에 새로 할당한 sector indexing
+      indirect_block->blocks[current_sector_type.indirect_index] = &new_sector_idx;
+      buffer_cache_write(disk_inode->indirect_block_sector_idx, indirect_block);
+      break;
+
+    case DOUBLE:
+      // DOUBLE INDEX BLOCK 읽어오기 (없으면 할당)
+      if (disk_inode->double_indirect_block_sector_idx == 0) {
+        block_sector_t* index_sector = 0;
+        if (!free_map_allocate(1, index_sector)) { 
+          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+          goto done;
+        }
+
+        disk_inode->double_indirect_block_sector_idx = &index_sector;
+        buffer_cache_write(&index_sector, zeros);
+      }
+      struct index_block* double_indirect_block = malloc(BLOCK_SECTOR_SIZE);
+      buffer_cache_read(disk_inode->double_indirect_block_sector_idx, double_indirect_block, 0, BLOCK_SECTOR_SIZE, 0);
+
+      // DOBULE INDEX BLOCK에서 current sector의 indirect block 읽어오기 (없으면 할당)
+      if (double_indirect_block->blocks[current_sector_type.double_indirect_index] == 0) {
+        block_sector_t* index_sector = 0;
+        if (!free_map_allocate(1, index_sector)) { 
+          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+          goto done;
+        }
+
+        double_indirect_block->blocks[current_sector_type.double_indirect_index] = &index_sector;
+        buffer_cache_write(&index_sector, zeros);
+      }
+      struct index_block* indirect_block = malloc(BLOCK_SECTOR_SIZE);
+      buffer_cache_read(double_indirect_block->blocks[current_sector_type.double_indirect_index], indirect_block, 0, BLOCK_SECTOR_SIZE, 0);
+      
+      // current sector의 indirect block에 index에 새로 할당한 블록 적어두기
+      indirect_block->blocks[current_sector_type.indirect_index] = &new_sector_idx;
+      buffer_cache_write(double_indirect_block->blocks[current_sector_type.double_indirect_index], indirect_block);
+      break;
+  }
+  success = true;
+  
+  done:
   return success;
 }
 
