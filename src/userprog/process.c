@@ -316,6 +316,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
       goto done; 
     }
   /* Read and verify executable header. */
+//   printf("ehdr %d %p\n", sizeof ehdr, file->inode);
+//   file_read (file, &ehdr, sizeof ehdr);
+//   printf("%s 랑 %s 이다 %d %d %d %d %d %d\n", ehdr.e_ident, "\177ELF\1\1\1", (memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)), ehdr.e_type != 2 ,ehdr.e_machine != 3 ,ehdr.e_version != 1 ,ehdr.e_phentsize != sizeof (struct Elf32_Phdr) ,ehdr.e_phnum > 1024);
+
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
       || ehdr.e_type != 2
@@ -409,8 +413,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   /* We arrive here whether the load is successful or not. */
   file_close (file);
 
-	if(sizeof(origin_file_name) > 0) {
-	}
+  printf("load success!\n");
   return success;
 }
 

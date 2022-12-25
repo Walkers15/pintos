@@ -18,7 +18,7 @@ void buffer_cache_terminate(void) {
 }
 void buffer_cache_read(block_sector_t sector_idx, void* buffer, off_t bytes_read, int chunk_size, int sector_ofs) {
     lock_acquire(&buffer_cache_lock);
-    // printf("CACHE READ\n");
+    printf("CACHE READ %d\n", sector_idx);
     struct buffer_cache_entry* buffer_cache = buffer_cache_lookup(sector_idx);
     // printf("1\n");
     memcpy (buffer + bytes_read, buffer_cache->buffer + sector_ofs, chunk_size);
@@ -30,7 +30,7 @@ void buffer_cache_read(block_sector_t sector_idx, void* buffer, off_t bytes_read
 
 void buffer_cache_write(block_sector_t sector_idx, void* buffer) {
     lock_acquire(&buffer_cache_lock);
-    // printf("CACHE WRITE\n");
+    printf("CACHE WRITE %d\n", sector_idx);
     struct buffer_cache_entry* buffer_cache = buffer_cache_lookup(sector_idx);
     memcpy (buffer_cache->buffer, buffer, BLOCK_SECTOR_SIZE);
     buffer_cache->reference_bit = 1;
