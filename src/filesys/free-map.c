@@ -87,5 +87,5 @@ free_map_create (void)
 // printf("free_map_create에서 bitmap_write 호출\n");
   if (!bitmap_write (free_map, free_map_file))
     PANIC ("can't write free map");
-printf("free map create done!!\n");
+// printf("free map create done!!\n");
 }
