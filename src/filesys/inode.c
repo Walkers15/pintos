@@ -182,8 +182,8 @@ inode_create (block_sector_t sector, off_t length)
       disk_inode->indirect_block_sector_idx = 0;
       buffer_cache_write (sector, disk_inode);
       // contiguous하지 않아도 되므로 한 block씩 할당하면서 전부 찰때까지 반복
+	  off_t current_length = 0;
       for (size_t i = 0; i < sectors; i++) {
-        off_t current_length = 0;
         printf("CREATE: TRY ALLOCATE NEW BLOCK... i is %d\n", i);
         if (!allocate_new_block(disk_inode, current_length)) {
           printf("CREATE: ALLOCATED NEW BLOCK 실패!\n");
@@ -207,7 +207,7 @@ inode_create (block_sector_t sector, off_t length)
 bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
   static char zeros[BLOCK_SECTOR_SIZE];
   bool success = false;
-  // printf("allocate new block %p %d\n", disk_inode, current_length);
+  printf("allocate new block %p %d\n", disk_inode, current_length);
   block_sector_t new_sector_idx;
   // printf("$$시발$$\n");
   if(!free_map_allocate(1, &new_sector_idx)) {
@@ -224,7 +224,7 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
   switch(current_sector_type.inode_type) {
     case DIRECT: {
       // direct_blocks 배열에 바로 할당 (0 ~ 122)
-      // printf("DIRECT INDEXING.. %d %d 는 %d\n", current_sector_type.direct_index, disk_inode->direct_blocks[current_sector_type.direct_index] , new_sector_idx);
+      printf("DIRECT INDEXING.. %d %d 는 %d\n", current_sector_type.direct_index, disk_inode->direct_blocks[current_sector_type.direct_index] , new_sector_idx);
       disk_inode->direct_blocks[current_sector_type.direct_index] = new_sector_idx;
       break;
     }
@@ -486,7 +486,14 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       bytes_read += chunk_size;
     }
   free (bounce);
-
+  if (inode->sector == 4) {
+	struct inode_disk* disk_inode = malloc(BLOCK_SECTOR_SIZE);
+	buffer_cache_read(4, disk_inode, 0, BLOCK_SECTOR_SIZE, 0);
+	for (int i = 0; i < DIRECT_BLOCK_COUNT; i++) {	
+		if(disk_inode->direct_blocks[i] == 0) break;
+		printf("시팔!! %d %d\n", i, disk_inode->direct_blocks[i]);
+	}
+  }
   return bytes_read;
 }
 
