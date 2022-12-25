@@ -153,7 +153,7 @@ page_fault (struct intr_frame *f)
 	if (user == false || not_present == true || is_kernel_vaddr(fault_addr)) {
 		// Test 중 Kernel Panic 처리
 		// User Program이 Kernel을 참조하면 해당 프로그램을 종료
-		// force_exit();
+		force_exit();
 		// printf("%s: exit(%d)\n", thread_current()->name, -1); 
 		// thread_current()->exit_status = -1;
 		// thread_exit();
