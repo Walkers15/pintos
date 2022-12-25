@@ -79,7 +79,7 @@ static void calculate_sector_type(off_t pos, struct sector_type *sector_type) {
     sector_type->indirect_index = block_index % INDIRECT_BLOCK_COUNT;
     
   }
-  printf("calculate_sector_type pos %d block index is %d\n", pos, block_index);
+  // printf("calculate_sector_type pos %d block index is %d\n", pos, block_index);
 }
 
 /* Returns the number of sectors to allocate for an inode SIZE
@@ -110,7 +110,7 @@ byte_to_sector (const struct inode *inode, off_t pos)
 
   struct sector_type current_sector_type;
   calculate_sector_type(pos, &current_sector_type);
-  printf("pos %d sector type %d direct index %d\n", pos, current_sector_type.inode_type, current_sector_type.direct_index);
+  // printf("pos %d sector type %d direct index %d\n", pos, current_sector_type.inode_type, current_sector_type.direct_index);
   switch (current_sector_type.inode_type) {
     case DIRECT: {
       
@@ -137,7 +137,7 @@ byte_to_sector (const struct inode *inode, off_t pos)
       break;
     }
   }
-  printf("byte to sector target index %d %d\n", current_sector_type.direct_index, target);
+  // printf("byte to sector target index %d %d\n", current_sector_type.direct_index, target);
   return target;
 }
 
@@ -189,7 +189,7 @@ inode_create (block_sector_t sector, off_t length)
           printf("CREATE: ALLOCATED NEW BLOCK 실패!\n");
           goto done;
         }
-        printf("성공! \n");
+        // printf("성공! \n");
         current_length += BLOCK_SECTOR_SIZE;
       }
       printf("전체 성공! %d \n", disk_inode->direct_blocks[0]);
@@ -224,7 +224,7 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
   switch(current_sector_type.inode_type) {
     case DIRECT: {
       // direct_blocks 배열에 바로 할당 (0 ~ 122)
-      printf("DIRECT INDEXING.. %d %d 는 %d\n", current_sector_type.direct_index, disk_inode->direct_blocks[current_sector_type.direct_index] , new_sector_idx);
+      // printf("DIRECT INDEXING.. %d %d 는 %d\n", current_sector_type.direct_index, disk_inode->direct_blocks[current_sector_type.direct_index] , new_sector_idx);
       disk_inode->direct_blocks[current_sector_type.direct_index] = new_sector_idx;
       break;
     }
@@ -461,7 +461,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       int chunk_size = size < min_left ? size : min_left;
       if (chunk_size <= 0)
         break;
-      printf("inode read sector idx %d\n", sector_idx);
+      printf("inode read real sector idx %d\n", sector_idx);
       if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
         {
           /* Read full sector directly into caller's buffer. */

@@ -352,7 +352,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
         goto done;
 			}
       file_ofs += sizeof phdr;
-      printf("\nphdr p type %d\n\n", phdr.p_type);
+      printf("\n@@@@@@@@@@@@@@@@@phdr p type %d@@@@@@@@@@@@\n\n", phdr.p_type);
       switch (phdr.p_type) 
         {
         case PT_NULL:
