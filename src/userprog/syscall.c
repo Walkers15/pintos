@@ -30,8 +30,8 @@ syscall_init (void)
 	static void
 syscall_handler (struct intr_frame *f) 
 {
-	printf ("system call! %d\n", *(int*)f->esp);
-	printf("esp %d\n",  *(int *)f->esp);
+	// printf("system call! %d\n", *(int*)f->esp);
+// printf("esp %d\n",  *(int *)f->esp);
 
 	int syscall_number = *(int *)f->esp; // syscallN 에서 esp에 System call number를 넣어준다
 
@@ -48,7 +48,7 @@ syscall_handler (struct intr_frame *f)
 
 										 // 열려있는 file pointer close
 										 struct file** ofile = thread_current()->ofile;
-										 printf("%s: exit(%d)\n", thread_current()->name, status); 
+// printf("%s: exit(%d)\n", thread_current()->name, status); 
 										 for (int fd = 2; fd < 200; fd ++) {
 											 if (ofile[fd] != NULL) {
 												 file_close(ofile[fd]);
@@ -66,7 +66,7 @@ syscall_handler (struct intr_frame *f)
 										 check_valid_pointer(f->esp + 4);
 
 										 const char* instruction = *(const char**) (f->esp + 4);
-										 printf("EXEC!!! %s\n", instruction);
+// printf("EXEC!!! %s\n", instruction);
 										 f->eax = process_execute(instruction); // Return Value 전달
 										 break;
 									 }
@@ -185,7 +185,7 @@ syscall_handler (struct intr_frame *f)
 											check_valid_pointer(f->esp + 12);
 
 											int fd = *(int*) (f->esp + 4);
-											printf("fd is %d\n", fd);
+// printf("fd is %d\n", fd);
 											void* buffer = (void*) *(uintptr_t*)(f->esp + 8);
 											unsigned size = *(unsigned *)(f->esp + 12);
 											if (fd == 1) {
@@ -275,7 +275,7 @@ void check_valid_pointer(void* ptr) {
 void force_exit() {
 	// System Call Handler 를 강제로 종료시킨다.
 	// abnormal way로 종료되었으므로 exit code는 -1이다.
-	printf("%s: exit(%d)\n", thread_current()->name, -1);
+// printf("%s: exit(%d)\n", thread_current()->name, -1);
 	// 열려있는 file pointer close
 	struct file** ofile = thread_current()->ofile;
 	for (int fd = 2; fd < 200; fd ++) {

@@ -107,7 +107,7 @@ lookup (const struct dir *dir, const char *name,
           *ep = e;
         if (ofsp != NULL)
           *ofsp = ofs;
-		printf("lookup file file %s %d\n", name, e.inode_sector);
+		// printf("lookup file file %s %d\n", name, e.inode_sector);
         return true;
       }
   return false;
@@ -143,7 +143,7 @@ printf("dir lookup %s %p\n", name, *inode);
 bool
 dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 {
-	printf("DIR ADD\n");
+	// printf("DIR ADD\n");
   struct dir_entry e;
   off_t ofs;
   bool success = false;
@@ -177,7 +177,7 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
   e.inode_sector = inode_sector;
   success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
  done:
- 	printf("dir add 결과 %s %d %d\n", e.name, e.inode_sector, success);
+ 	// printf("dir add 결과 %s %d %d\n", e.name, e.inode_sector, success);
   return success;
 }
 

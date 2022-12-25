@@ -160,7 +160,7 @@ inode_init (void)
 bool
 inode_create (block_sector_t sector, off_t length)
 {
-  printf("INODE CREATE %s %d %d\n", thread_current()->name, sector, length);
+// printf("INODE CREATE %s %d %d\n", thread_current()->name, sector, length);
   struct inode_disk *disk_inode = NULL;
   bool success = false;
 
@@ -175,7 +175,7 @@ inode_create (block_sector_t sector, off_t length)
   if (disk_inode != NULL)
     {
       size_t sectors = bytes_to_sectors (length);
-      printf("SECTOR %d LENGTH %d\n", sectors, length);
+// printf("SECTOR %d LENGTH %d\n", sectors, length);
       disk_inode->length = length;
       disk_inode->magic = INODE_MAGIC;
       disk_inode->double_indirect_block_sector_idx = 0;
@@ -184,15 +184,15 @@ inode_create (block_sector_t sector, off_t length)
       // contiguous하지 않아도 되므로 한 block씩 할당하면서 전부 찰때까지 반복
 	  off_t current_length = 0;
       for (size_t i = 0; i < sectors; i++) {
-        printf("CREATE: TRY ALLOCATE NEW BLOCK... i is %d\n", i);
+// printf("CREATE: TRY ALLOCATE NEW BLOCK... i is %d\n", i);
         if (!allocate_new_block(disk_inode, current_length)) {
-          printf("CREATE: ALLOCATED NEW BLOCK 실패!\n");
+// printf("CREATE: ALLOCATED NEW BLOCK 실패!\n");
           goto done;
         }
         // printf("성공! \n");
         current_length += BLOCK_SECTOR_SIZE;
       }
-      printf("전체 성공! %d \n", disk_inode->direct_blocks[0]);
+// printf("전체 성공! %d \n", disk_inode->direct_blocks[0]);
       // 업데이트한 정보 inode_disk로 기록
       buffer_cache_write (sector, disk_inode);
       success = true; 
@@ -200,18 +200,18 @@ inode_create (block_sector_t sector, off_t length)
     }
 
   done:
-  printf("INODE CREATE RETURN SUCCESS..... %d\n", success);
+// printf("INODE CREATE RETURN SUCCESS..... %d\n", success);
   return success;
 }
 
 bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
   static char zeros[BLOCK_SECTOR_SIZE];
   bool success = false;
-  printf("allocate new block %p %d\n", disk_inode, current_length);
+// printf("allocate new block %p %d\n", disk_inode, current_length);
   block_sector_t new_sector_idx;
   // printf("$$시발$$\n");
   if(!free_map_allocate(1, &new_sector_idx)) {
-    printf("INODE CREATasdE: FREE MAP ALLOCATE ERROR!! %p %d\n", disk_inode, current_length);
+// printf("INODE CREATasdE: FREE MAP ALLOCATE ERROR!! %p %d\n", disk_inode, current_length);
     goto done;
   }
 
@@ -224,7 +224,7 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
   switch(current_sector_type.inode_type) {
     case DIRECT: {
       // direct_blocks 배열에 바로 할당 (0 ~ 122)
-      printf("DIRECT INDEXING.. %d %d 는 %d\n", current_sector_type.direct_index, disk_inode->direct_blocks[current_sector_type.direct_index] , new_sector_idx);
+// printf("DIRECT INDEXING.. %d %d 는 %d\n", current_sector_type.direct_index, disk_inode->direct_blocks[current_sector_type.direct_index] , new_sector_idx);
       disk_inode->direct_blocks[current_sector_type.direct_index] = new_sector_idx;
       break;
     }
@@ -234,7 +234,7 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
       if (disk_inode->indirect_block_sector_idx == 0) {
         block_sector_t* index_sector = 0;
         if (!free_map_allocate(1, index_sector)) { 
-          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+// printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
           goto done;
         }
         disk_inode->indirect_block_sector_idx = *index_sector;
@@ -256,7 +256,7 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
       if (disk_inode->double_indirect_block_sector_idx == 0) {
         block_sector_t* index_sector = 0;
         if (!free_map_allocate(1, index_sector)) { 
-          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+// printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
           goto done;
         }
 
@@ -270,7 +270,7 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
       if (double_indirect_block->blocks[current_sector_type.double_indirect_index] == 0) {
         block_sector_t* index_sector = 0;
         if (!free_map_allocate(1, index_sector)) { 
-          printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
+// printf("INODE CREATE: FREE MAP ALLOCATE ERROR!!\n");
           goto done;
         }
 
@@ -299,7 +299,7 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
 struct inode *
 inode_open (block_sector_t sector)
 {
-  printf("INODE OPEN %d\n", sector);
+// printf("INODE OPEN %d\n", sector);
   struct list_elem *e;
   struct inode *inode;
 
@@ -328,7 +328,7 @@ inode_open (block_sector_t sector)
   inode->removed = false;
   lock_init(&(inode->inode_lock));
   // block_read (fs_device, inode->sector, &inode->data);
-  printf("open inode %d done\n", sector);
+// printf("open inode %d done\n", sector);
   return inode;
 }
 
@@ -445,7 +445,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
-  printf("inode read at %p %d %d %d\n", inode, inode->sector, size, offset);
+// printf("inode read at %p %d %d %d\n", inode, inode->sector, size, offset);
   while (size > 0) 
     {
       /* Disk sector to read, starting byte offset within sector. */
@@ -461,7 +461,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       int chunk_size = size < min_left ? size : min_left;
       if (chunk_size <= 0)
         break;
-      printf("inode read real sector idx %d\n", sector_idx);
+// printf("inode read real sector idx %d\n", sector_idx);
       if (sector_ofs == 0 && chunk_size == BLOCK_SECTOR_SIZE)
         {
           /* Read full sector directly into caller's buffer. */
@@ -491,7 +491,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 	buffer_cache_read(4, disk_inode, 0, BLOCK_SECTOR_SIZE, 0);
 	for (int i = 0; i < DIRECT_BLOCK_COUNT; i++) {	
 		if(disk_inode->direct_blocks[i] == 0) break;
-		printf("시팔!! %d %d\n", i, disk_inode->direct_blocks[i]);
+// printf("시팔!! %d %d\n", i, disk_inode->direct_blocks[i]);
 	}
   }
   return bytes_read;
@@ -512,7 +512,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 
   if (inode->deny_write_cnt)
     return 0;
-  printf("CALL INODE WRITE AT %p %d %p %d %d\n", inode, inode->sector, buffer, size, offset);
+// printf("CALL INODE WRITE AT %p %d %p %d %d\n", inode, inode->sector, buffer, size, offset);
   // printf("\nbuffer 출력\n%s\n", buffer);
   // printf("LOCK ACQUIRED AT %s\n", thread_current()->name);
   lock_acquire(&inode->inode_lock);

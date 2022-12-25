@@ -27,7 +27,7 @@ filesys_init (bool format)
 
   if (format) 
     do_format ();
-  printf("call free map open\n");
+// printf("call free map open\n");
   free_map_open ();
 }
 
@@ -53,7 +53,7 @@ filesys_create (const char *name, off_t initial_size)
                   && free_map_allocate (1, &inode_sector)
                   && inode_create (inode_sector, initial_size)
                   && dir_add (dir, name, inode_sector));
-  printf("FILESYS_CREATE %d\n", success);
+// printf("FILESYS_CREATE %d\n", success);
   if (!success && inode_sector != 0) 
     free_map_release (inode_sector, 1);
   dir_close (dir);
@@ -97,7 +97,7 @@ do_format (void)
 {
   printf ("Formatting   file system...");
   free_map_create ();
-  printf("free_map_create 끝! dir_create 시작\n");
+// printf("free_map_create 끝! dir_create 시작\n");
   if (!dir_create (ROOT_DIR_SECTOR, 16))
     PANIC ("root directory creation failed");
   free_map_close ();
