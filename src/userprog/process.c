@@ -107,6 +107,7 @@ start_process (void *file_name_)
 	} else {
 		sema_up(&(thread_current()->load));
 	}
+  printf("자 드가자~~~\n");
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
@@ -333,6 +334,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
       goto done; 
     }
 
+    printf("\n\nRead program headers. %d\n", ehdr.e_phnum);
   /* Read program headers. */
   file_ofs = ehdr.e_phoff;
   for (i = 0; i < ehdr.e_phnum; i++) 
@@ -350,6 +352,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
         goto done;
 			}
       file_ofs += sizeof phdr;
+      printf("\nphdr p type %d\n\n", phdr.p_type);
       switch (phdr.p_type) 
         {
         case PT_NULL:
@@ -566,6 +569,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT (ofs % PGSIZE == 0);
 
   file_seek (file, ofs);
+  printf("\n\nload segment!!!!!! %p %d %d\n\n", file->inode, read_bytes, zero_bytes);
   while (read_bytes > 0 || zero_bytes > 0) 
     {
       /* Calculate how to fill this page.
@@ -598,6 +602,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
+      printf("%s\n", kpage);
     }
   return true;
 }

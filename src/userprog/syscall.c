@@ -30,8 +30,8 @@ syscall_init (void)
 	static void
 syscall_handler (struct intr_frame *f) 
 {
-	// printf ("system call! %d\n", *(int*)f->esp);
-	// printf("esp %d\n",  *(int *)f->esp);
+	printf ("system call! %d\n", *(int*)f->esp);
+	printf("esp %d\n",  *(int *)f->esp);
 
 	int syscall_number = *(int *)f->esp; // syscallN 에서 esp에 System call number를 넣어준다
 
@@ -66,7 +66,7 @@ syscall_handler (struct intr_frame *f)
 										 check_valid_pointer(f->esp + 4);
 
 										 const char* instruction = *(const char**) (f->esp + 4);
-										 // printf("EXEC!!! %s\n", instruction);
+										 printf("EXEC!!! %s\n", instruction);
 										 f->eax = process_execute(instruction); // Return Value 전달
 										 break;
 									 }
@@ -185,7 +185,7 @@ syscall_handler (struct intr_frame *f)
 											check_valid_pointer(f->esp + 12);
 
 											int fd = *(int*) (f->esp + 4);
-											// printf("fd is %d\n", fd);
+											printf("fd is %d\n", fd);
 											void* buffer = (void*) *(uintptr_t*)(f->esp + 8);
 											unsigned size = *(unsigned *)(f->esp + 12);
 											if (fd == 1) {

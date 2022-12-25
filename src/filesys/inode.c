@@ -478,10 +478,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
               if (bounce == NULL)
                 break;
             }
-          buffer_cache_read(sector_idx, bounce, bytes_read, chunk_size, sector_ofs);
-          // block_read (fs_device, sector_idx, bounce);
-          memcpy (buffer + bytes_read, bounce + sector_ofs, chunk_size);
-          
+          buffer_cache_read(sector_idx, buffer, bytes_read, chunk_size, sector_ofs);
         }
       /* Advance. */
       size -= chunk_size;
