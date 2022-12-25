@@ -346,6 +346,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
         goto done;
 			}
       file_ofs += sizeof phdr;
+      printf("phdr p type %d \n", phdr.p_type);
       switch (phdr.p_type) 
         {
         case PT_NULL:
@@ -561,7 +562,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
   ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
   ASSERT (pg_ofs (upage) == 0);
   ASSERT (ofs % PGSIZE == 0);
-
+  printf("load segment!! %p %d %d %d\n", file->inode, ofs, read_bytes, zero_bytes);
   file_seek (file, ofs);
   while (read_bytes > 0 || zero_bytes > 0) 
     {
