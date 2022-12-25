@@ -306,7 +306,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 	strlcpy(origin_file_name, file_name, strlen(file_name) + 1);
 	char* args = NULL;
 	char* instruction_name = strtok_r((char*)file_name, " ", &args);
-	// printf("%s 랑%s\n", instruction_name, args);
+// printf("%s 랑%s\n", instruction_name, args);
   /* Open executable file. */
   file = filesys_open (instruction_name);
 

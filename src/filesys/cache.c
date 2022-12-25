@@ -31,6 +31,9 @@ void buffer_cache_read(block_sector_t sector_idx, void* buffer, off_t bytes_read
 void buffer_cache_write(block_sector_t sector_idx, void* buffer) {
     lock_acquire(&buffer_cache_lock);
     // printf("CACHE WRITE %d\n", sector_idx);
+	// if (sector_idx == 0) {
+	// 	hex_dump(0, buffer, 100, true);
+	// }
     struct buffer_cache_entry* buffer_cache = buffer_cache_lookup(sector_idx);
     memcpy (buffer_cache->buffer, buffer, BLOCK_SECTOR_SIZE);
     buffer_cache->reference_bit = 1;

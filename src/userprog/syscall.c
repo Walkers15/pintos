@@ -48,7 +48,7 @@ syscall_handler (struct intr_frame *f)
 
 										 // 열려있는 file pointer close
 										 struct file** ofile = thread_current()->ofile;
-										 printf("%s: exit(%d)\n", thread_current()->name, status); 
+										 printf ("%s: exit(%d)\n", thread_current()->name, status); 
 										 for (int fd = 2; fd < 200; fd ++) {
 											 if (ofile[fd] != NULL) {
 												 file_close(ofile[fd]);
@@ -275,7 +275,7 @@ void check_valid_pointer(void* ptr) {
 void force_exit() {
 	// System Call Handler 를 강제로 종료시킨다.
 	// abnormal way로 종료되었으므로 exit code는 -1이다.
-	printf("%s: exit(%d)\n", thread_current()->name, -1);
+	printf ("%s: exit(%d)\n", thread_current()->name, -1);
 	// 열려있는 file pointer close
 	struct file** ofile = thread_current()->ofile;
 	for (int fd = 2; fd < 200; fd ++) {
