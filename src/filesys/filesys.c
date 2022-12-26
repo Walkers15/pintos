@@ -54,6 +54,10 @@ filesys_done (void)
 bool
 filesys_create (const char *name, off_t initial_size) 
 {
+  // printf("filesys create name %s size %d\n", name, initial_size);
+  if (strlen(name) > NAME_MAX) {
+    return false;
+  }
   block_sector_t inode_sector = 0;
   // struct dir *dir = dir_open_root ();
   char* copy_name = (char*)malloc(strlen(name) + 1);
@@ -64,7 +68,11 @@ filesys_create (const char *name, off_t initial_size)
   make_path(copy_name, &path);
 
   struct dir* dir = path.dir;
-  // printf("path file name %s\n", path.file_name);
+  // printf("path file name %s %d\n", path.file_name, strlen(path.file_name));
+  // printf("file name len %d\n", strlen(path.file_name));
+  if (strlen(path.file_name) > NAME_MAX) {
+    return false;
+  }
   bool success = (dir != NULL
                   && free_map_allocate (1, &inode_sector)
                   && inode_create (inode_sector, initial_size, false)
