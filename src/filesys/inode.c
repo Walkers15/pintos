@@ -1,5 +1,4 @@
 #include "filesys/inode.h"
-#include <list.h>
 #include <debug.h>
 #include <round.h>
 #include <string.h>
@@ -7,7 +6,7 @@
 #include "filesys/filesys.h"
 #include "filesys/free-map.h"
 #include "threads/malloc.h"
-#include "threads/synch.h"
+
 #include "threads/thread.h"
 #include "filesys/cache.h"
 
@@ -44,16 +43,7 @@ struct inode_disk
     block_sector_t direct_blocks[DIRECT_BLOCK_COUNT];
   };
 
-/* In-memory inode. */
-struct inode 
-  {
-    struct list_elem elem;              /* Element in inode list. */
-    block_sector_t sector;              /* Sector number of disk location. */
-    int open_cnt;                       /* Number of openers. */
-    bool removed;                       /* True if deleted, false otherwise. */
-    int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
-    struct lock inode_lock;
-  };
+
 
 struct index_block {
   block_sector_t blocks[INDIRECT_BLOCK_COUNT];

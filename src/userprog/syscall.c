@@ -285,16 +285,26 @@ syscall_handler (struct intr_frame *f)
 
       char* copy_name = (char*)malloc(strlen(file) + 1);
       strlcpy(copy_name, file, strlen(file) + 1);
-
+      // printf("SYSCALL chdir %s\n", copy_name);
       struct path path;
-      make_path(copy_name, &path);
 
+      make_path(copy_name, &path);
+      // printf("make path 결과 %p %s %d\n", path.dir, path.file_name, inode_get_inumber(dir_get_inode(path.dir)));
+
+      
       if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
         f->eax = -1;
 	      break;
       }
 
-      thread_current()->current_dir = path.dir;
+      struct inode* inode = NULL;
+      if (dir_lookup(path.dir, path.file_name, &inode) == false) {
+        f->eax = -1;
+        break;
+      }
+
+      // printf("#@#@chdir %p %d\n", inode, inode_get_inumber(inode));
+      thread_current()->current_dir = dir_open(inode);
       f->eax = true;
       break;
     }
@@ -304,12 +314,12 @@ syscall_handler (struct intr_frame *f)
       check_valid_pointer(f->esp + 4);
       char* dir = *(char**)(f->esp + 4);
       
-      filesys_create_dir(dir);
+      f->eax = filesys_create_dir(dir);
       break;
     }
 
     case SYS_READDIR: {
-      // bool readdir (int fd, char name[READDIR_MAX_LEN + 1]) 
+      // bool readdir (int fd, char name[READDIR_MAX_LEN + 1])
       check_valid_pointer(f->esp + 4);
       check_valid_pointer(f->esp + 8);
       int fd = *(int*) (f->esp + 4);
@@ -320,16 +330,18 @@ syscall_handler (struct intr_frame *f)
       if (file_is_dir(fp) == false) {
         break;
       }
-
+      // printf("System call readdir\n") ;
       struct dir* dir = dir_open(file_get_inode(fp));
+
       dir->pos = file_tell(fp);
       if (dir_readdir(dir, name) == false) {
+        f->eax = false;
         break;
       }
-
+      
       file_seek(fp, dir->pos);
-
-      f->eax = name;
+      // printf("System call readdir result %s\n", name) ;
+      f->eax = true;
       break;
     }
 

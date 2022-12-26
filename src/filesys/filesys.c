@@ -92,8 +92,10 @@ void make_path(char* path_name, struct path* result) {
   if (path_name[0] == '/') {
     dir = dir_open_root();
   } else {
+    // printf("dir reopen! %d\n", inode_get_inumber(dir_get_inode(thread_current()->current_dir)));
     dir = dir_reopen(thread_current()->current_dir);
   }
+  // dir = dir_reopen(thread_current()->current_dir);
 
   ASSERT(dir != NULL);
   ASSERT(inode_is_dir(dir_get_inode(dir)));
@@ -108,17 +110,20 @@ void make_path(char* path_name, struct path* result) {
   // printf("token1 %s, token2 %s\n", token1, token2);
   while(token2 != NULL && token1 != NULL) {
     // path의 끝에 닿을 때 까지 계속 이동
-    // printf("token1 %s token2 %s\n", token1, token2);
+  // printf("token1 %s token2 %s\n", token1, token2);
     struct inode* inode = NULL;
 
     if (strlen(token1) > NAME_MAX || dir_lookup(dir, token1, &inode) == false || inode_is_dir(inode) == false) {
       // path가 ../file/file 인 경우 Error
+  // printf("path find ERROR!!!!!\n");
       dir_close(dir);
       return;
     }
 
     dir_close(dir);
+    
     dir = dir_open(inode);
+  // printf("path dir_open %s %p\n", token1, dir);
 
     token1 = token2;
     token2 = strtok_r(NULL, "/", &temp);
@@ -165,6 +170,8 @@ filesys_open (const char *name)
   struct dir* dir = path.dir;
   struct inode *inode = NULL;
 
+  // printf("path file name %s dir %p\n", path.file_name, path.dir);
+
   if (dir != NULL)
     dir_lookup (dir, path.file_name, &inode);
   dir_close (dir);
@@ -201,7 +208,7 @@ filesys_remove (const char *name)
 }
 
 bool filesys_create_dir(char* name) {
-  // printf("filesys remove name %s\n", name);
+  // printf("filesys_create_dir %s\n", name);
 
   if (strlen(name) == 0) {
     return false;
@@ -217,7 +224,10 @@ bool filesys_create_dir(char* name) {
     return false;
   }
 
-  struct dir *dir = dir_open_root ();
+  // printf("path file name %s %d\n", path.file_name, strlen(path.file_name));
+  // printf("file name len %d\n", strlen(path.file_name));
+
+  struct dir *dir = path.dir;
 
   block_sector_t inode_sector;
 
@@ -231,7 +241,7 @@ bool filesys_create_dir(char* name) {
   else {
     struct dir* current_dir = dir_open(inode_open(inode_sector));
     dir_add(current_dir, ".", inode_sector);
-    dir_add(current_dir, "..", dir_get_inode(dir));
+    dir_add(current_dir, "..", inode_get_inumber(dir_get_inode(dir)));
     dir_close(current_dir);
   }
   dir_close (dir);
