@@ -8,7 +8,6 @@
 #include "hash.h"
 #include "../debug.h"
 #include "threads/malloc.h"
-#include <stdio.h>
 
 #define list_elem_to_hash_elem(LIST_ELEM)                       \
         list_entry(LIST_ELEM, struct hash_elem, list_elem)
@@ -101,9 +100,12 @@ hash_insert (struct hash *h, struct hash_elem *new)
 {
   struct list *bucket = find_bucket (h, new);
   struct hash_elem *old = find_elem (h, bucket, new);
+
   if (old == NULL) 
     insert_elem (h, bucket, new);
+
   rehash (h);
+
   return old; 
 }
 

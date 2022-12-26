@@ -3,10 +3,9 @@
 
 #include <debug.h>
 #include <list.h>
-#include <hash.h>
 #include <stdint.h>
 #include "threads/synch.h"
-#include "devices/timer.h"
+#include "filesys/directory.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -118,8 +117,8 @@ struct thread
 
 		int load_status; // Child의 load status를 참조하기 위해 사용
 
-      // Proj4
-      struct hash page_headers;
+    // Proj5
+    struct dir* current_dir;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

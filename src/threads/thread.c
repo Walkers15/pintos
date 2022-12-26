@@ -12,7 +12,6 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
-#include "vm/page.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -100,6 +99,7 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  initial_thread->current_dir = NULL;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -188,9 +188,13 @@ thread_create (const char *name, int priority,
 	// Parent - Child Process 등록
 	list_push_back(&(thread_current()->child_list), &(t->child_elem));
 
-  // Page Header Hash 초기화
-  init_page_headers(t); // ㅇㅇ
-
+  // Directory 상속
+  if (thread_current()->current_dir != NULL) {
+    t->current_dir = thread_current()->current_dir;
+  } else {
+    t->current_dir = NULL;
+  }
+  
 	t->ofile = (struct file**) malloc (sizeof(struct file*) * 200); // 우선 임의로 fd의 최대 크기를 200으로 설정
 	for (int i = 0; i < 200; i++) {
 		t->ofile[i] = NULL;
@@ -336,7 +340,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-  list_push_back (&ready_list, &cur->elem);
+    list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -479,7 +483,7 @@ is_thread (struct thread *t)
 static void
 init_thread (struct thread *t, const char *name, int priority)
 {
-  // printf("Init Thread %s\n",name);
+	// printf("Init Thread %s\n",name);
   enum intr_level old_level;
 
   ASSERT (t != NULL);

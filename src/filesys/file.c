@@ -2,7 +2,6 @@
 #include <debug.h>
 #include "filesys/inode.h"
 #include "threads/malloc.h"
-#include <stdio.h>
 
 /* Opens a file for the given INODE, of which it takes ownership,
    and returns the new file.  Returns a null pointer if an
@@ -61,8 +60,10 @@ file_get_inode (struct file *file)
 off_t
 file_read (struct file *file, void *buffer, off_t size) 
 {
+// printf("FILE READ!!\n");
   off_t bytes_read = inode_read_at (file->inode, buffer, size, file->pos);
   file->pos += bytes_read;
+// printf("file read 결과 %d\n", bytes_read);
   return bytes_read;
 }
 
@@ -87,6 +88,10 @@ file_read_at (struct file *file, void *buffer, off_t size, off_t file_ofs)
 off_t
 file_write (struct file *file, const void *buffer, off_t size) 
 {
+// printf("FILE WIRTE!!\n");
+  if (file_is_dir(file)) {
+    return -1;
+  }
   off_t bytes_written = inode_write_at (file->inode, buffer, size, file->pos);
   file->pos += bytes_written;
   return bytes_written;
@@ -159,3 +164,8 @@ file_tell (struct file *file)
   ASSERT (file != NULL);
   return file->pos;
 }
+
+bool file_is_dir(struct file* file) {
+  ASSERT (file != NULL);
+  return inode_is_dir(file->inode);
+};
