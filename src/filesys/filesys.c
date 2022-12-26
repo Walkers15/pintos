@@ -55,24 +55,25 @@ bool
 filesys_create (const char *name, off_t initial_size) 
 {
   // printf("filesys create name %s size %d\n", name, initial_size);
-  if (strlen(name) > NAME_MAX) {
-    return false;
-  }
+
   block_sector_t inode_sector = 0;
   // struct dir *dir = dir_open_root ();
   char* copy_name = (char*)malloc(strlen(name) + 1);
   strlcpy(copy_name, name, strlen(name) + 1);
 
   struct path path;
+  path.dir = NULL;
   // printf("make path!!\n");
   make_path(copy_name, &path);
+
+  if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
+    return false;
+  }
 
   struct dir* dir = path.dir;
   // printf("path file name %s %d\n", path.file_name, strlen(path.file_name));
   // printf("file name len %d\n", strlen(path.file_name));
-  if (strlen(path.file_name) > NAME_MAX) {
-    return false;
-  }
+
   bool success = (dir != NULL
                   && free_map_allocate (1, &inode_sector)
                   && inode_create (inode_sector, initial_size, false)
@@ -129,7 +130,7 @@ void make_path(char* path_name, struct path* result) {
   if (token1 == NULL) {
     // 마지막 끝이 디렉터리인 경우
     strlcpy(result->file_name, ".", 2);
-  } else {
+  } else if (strlen(token1) <= NAME_MAX) {
     strlcpy(result->file_name, token1, strlen(token1) + 1);
   }
 
@@ -146,11 +147,28 @@ void make_path(char* path_name, struct path* result) {
 struct file *
 filesys_open (const char *name)
 {
-  struct dir *dir = dir_open_root ();
+  // printf("filesys open name %s\n", name);
+
+  if (strlen(name) == 0) {
+    return false;
+  }
+
+  char* copy_name = (char*)malloc(strlen(name) + 1);
+  strlcpy(copy_name, name, strlen(name) + 1);
+
+  struct path path;
+  // printf("make path!!\n");
+  make_path(copy_name, &path);
+
+  if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
+    return false;
+  }
+
+  struct dir* dir = path.dir;
   struct inode *inode = NULL;
 
   if (dir != NULL)
-    dir_lookup (dir, name, &inode);
+    dir_lookup (dir, path.file_name, &inode);
   dir_close (dir);
   return file_open (inode);
 }
