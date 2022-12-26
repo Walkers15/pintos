@@ -202,7 +202,6 @@ bool allocate_new_block (struct inode_disk* disk_inode, off_t current_length) {
   bool success = false;
 // printf("allocate new block %p %d\n", disk_inode, current_length);
   block_sector_t new_sector_idx;
-  // printf("$$시발$$\n");
   if(!free_map_allocate(1, &new_sector_idx)) {
   // printf("INODE CREATasdE: FREE MAP ALLOCATE ERROR!! %p %d\n", disk_inode, current_length);
     goto done;
