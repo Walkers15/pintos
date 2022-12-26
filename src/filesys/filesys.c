@@ -87,6 +87,8 @@ void make_path(char* path_name, struct path* result) {
    * 상대 경로 ../../pintos/text/abc
   */
   struct dir* dir;
+  strlcpy(result->file_name, "\0", 2);
+  
   if (path_name[0] == '/') {
     dir = dir_open_root();
   } else {
@@ -103,13 +105,13 @@ void make_path(char* path_name, struct path* result) {
   // dir_token = strtok_r(path_name, "/", &next);
   token1 = strtok_r(path_name, "/", &temp);
   token2 = strtok_r(NULL, "/", &temp);
-  // printf("dir token %s, file token %s\n", token1, token2);
+  // printf("token1 %s, token2 %s\n", token1, token2);
   while(token2 != NULL && token1 != NULL) {
     // path의 끝에 닿을 때 까지 계속 이동
     // printf("token1 %s token2 %s\n", token1, token2);
     struct inode* inode = NULL;
 
-    if (dir_lookup(dir, token1, &inode) == false || inode_is_dir(inode) == false) {
+    if (strlen(token1) > NAME_MAX || dir_lookup(dir, token1, &inode) == false || inode_is_dir(inode) == false) {
       // path가 ../file/file 인 경우 Error
       dir_close(dir);
       return;
@@ -126,9 +128,11 @@ void make_path(char* path_name, struct path* result) {
     // 마지막 끝이 디렉터리인 경우
     strlcpy(result->file_name, ".", 2);
   } else if (strlen(token1) <= NAME_MAX) {
+    // printf("asdasdqaaa %d", strlen(token1));
     strlcpy(result->file_name, token1, strlen(token1) + 1);
   }
 
+  // printf("싯팦ㄹ %d\n",strlen(token1));
   result->dir = dir;
 
   return;
@@ -195,6 +199,46 @@ filesys_remove (const char *name)
   dir_close (dir); 
   return success;
 }
+
+bool filesys_create_dir(char* name) {
+  // printf("filesys remove name %s\n", name);
+
+  if (strlen(name) == 0) {
+    return false;
+  }
+
+  char* copy_name = (char*)malloc(strlen(name) + 1);
+  strlcpy(copy_name, name, strlen(name) + 1);
+
+  struct path path;
+  make_path(copy_name, &path);
+
+  if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
+    return false;
+  }
+
+  struct dir *dir = dir_open_root ();
+
+  block_sector_t inode_sector;
+
+  bool success = (dir != NULL
+                 && free_map_allocate (1, &inode_sector)
+                 && dir_create(inode_sector, 25)
+                 && dir_add (dir, path.file_name, inode_sector));
+  // printf("FILESYS_CREATE %d\n", success);
+  if (!success && inode_sector != 0) 
+    free_map_release (inode_sector, 1);
+  else {
+    struct dir* current_dir = dir_open(inode_open(inode_sector));
+    dir_add(current_dir, ".", inode_sector);
+    dir_add(current_dir, "..", dir_get_inode(dir));
+    dir_close(current_dir);
+  }
+  dir_close (dir);
+
+  return success;
+}
+
 
 /* Formats the file system. */
 static void

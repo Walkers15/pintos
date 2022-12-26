@@ -298,6 +298,50 @@ syscall_handler (struct intr_frame *f)
       f->eax = true;
       break;
     }
+
+    case SYS_MKDIR: {
+      // bool mkdir (const char *dir)
+      check_valid_pointer(f->esp + 4);
+      char* dir = *(char**)(f->esp + 4);
+      
+      filesys_create_dir(dir);
+      break;
+    }
+
+    case SYS_READDIR: {
+      // bool readdir (int fd, char name[READDIR_MAX_LEN + 1]) 
+      check_valid_pointer(f->esp + 4);
+      check_valid_pointer(f->esp + 8);
+      int fd = *(int*) (f->esp + 4);
+      char* name = (char*) (f->esp + 8);
+
+      struct file* fp = get_fp_from_fd(fd);
+
+      if (file_is_dir(fp) == false) {
+        break;
+      }
+
+      struct dir* dir = dir_open(file_get_inode(fp));
+      dir->pos = file_tell(fp);
+      if (dir_readdir(dir, name) == false) {
+        break;
+      }
+
+      file_seek(fp, dir->pos);
+
+      f->eax = name;
+      break;
+    }
+
+    case SYS_INUMBER: {
+      // int inumber (int fd) 
+      check_valid_pointer(f->esp + 4);
+      int fd = *(int*) (f->esp + 4);
+
+      struct file* fp = get_fp_from_fd(fd);
+      f->eax = inode_get_inumber(file_get_inode(fp));
+      break;
+    }
 	}
 	// printf("EXIT!!!\n");
 	// thread_exit ();
