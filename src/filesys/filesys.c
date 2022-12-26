@@ -11,13 +11,8 @@
 
 /* Partition that contains the file system. */
 struct block *fs_device;
-struct path {
-  char file_name[NAME_MAX + 1];
-  struct dir* dir;
-};
 
 static void do_format (void);
-void make_path(char* path_name, struct path* result);
 
 /* Initializes the file system module.
    If FORMAT is true, reformats the file system. */
@@ -157,7 +152,6 @@ filesys_open (const char *name)
   strlcpy(copy_name, name, strlen(name) + 1);
 
   struct path path;
-  // printf("make path!!\n");
   make_path(copy_name, &path);
 
   if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
@@ -180,6 +174,22 @@ filesys_open (const char *name)
 bool
 filesys_remove (const char *name) 
 {
+  // printf("filesys remove name %s\n", name);
+
+  if (strlen(name) == 0) {
+    return false;
+  }
+
+  char* copy_name = (char*)malloc(strlen(name) + 1);
+  strlcpy(copy_name, name, strlen(name) + 1);
+
+  struct path path;
+  make_path(copy_name, &path);
+
+  if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
+    return false;
+  }
+
   struct dir *dir = dir_open_root ();
   bool success = dir != NULL && dir_remove (dir, name);
   dir_close (dir); 

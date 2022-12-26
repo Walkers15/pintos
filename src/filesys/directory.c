@@ -182,6 +182,7 @@ dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 bool
 dir_remove (struct dir *dir, const char *name) 
 {
+  // TODO 파일 있는 디렉터리는 지우면 안됨
   struct dir_entry e;
   struct inode *inode = NULL;
   bool success = false;

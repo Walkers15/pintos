@@ -266,8 +266,38 @@ syscall_handler (struct intr_frame *f)
       int fd = *(int*) (f->esp + 4);
       struct file* fp = get_fp_from_fd(fd);
       f->eax = file_is_dir(fp);
+      break;
     }
 
+    case SYS_CHDIR: {
+      // bool chdir (const char *dir)
+      check_valid_pointer(f->esp + 4);
+      const char* file = *(char**)(f->esp + 4);
+      if (file == NULL) {
+	      f->eax = -1;
+	      break;
+      }
+
+      if (strlen(file) == 0) {
+	      f->eax = -1;
+	      break;
+      }
+
+      char* copy_name = (char*)malloc(strlen(file) + 1);
+      strlcpy(copy_name, file, strlen(file) + 1);
+
+      struct path path;
+      make_path(copy_name, &path);
+
+      if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
+        f->eax = -1;
+	      break;
+      }
+
+      thread_current()->current_dir = path.dir;
+      f->eax = true;
+      break;
+    }
 	}
 	// printf("EXIT!!!\n");
 	// thread_exit ();
