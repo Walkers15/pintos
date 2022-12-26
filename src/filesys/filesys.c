@@ -137,7 +137,6 @@ void make_path(char* path_name, struct path* result) {
     strlcpy(result->file_name, token1, strlen(token1) + 1);
   }
 
-  // printf("싯팦ㄹ %d\n",strlen(token1));
   result->dir = dir;
 
   return;

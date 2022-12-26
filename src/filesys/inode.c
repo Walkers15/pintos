@@ -481,7 +481,6 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 // 	buffer_cache_read(4, disk_inode, 0, BLOCK_SECTOR_SIZE, 0);
 // 	for (int i = 0; i < DIRECT_BLOCK_COUNT; i++) {	
 // 		if(disk_inode->direct_blocks[i] == 0) break;
-// // printf("시팔!! %d %d\n", i, disk_inode->direct_blocks[i]);
 // 	}
 //   }
 // if (inode->sector == 1 && offset > BLOCK_SECTOR_SIZE) {
