@@ -273,19 +273,20 @@ syscall_handler (struct intr_frame *f)
       // bool chdir (const char *dir)
       check_valid_pointer(f->esp + 4);
       const char* file = *(char**)(f->esp + 4);
+      f->eax = false;
       if (file == NULL) {
-	      f->eax = -1;
+	      f->eax = false;
 	      break;
       }
 
       if (strlen(file) == 0) {
-	      f->eax = -1;
+	      f->eax = false;
 	      break;
       }
 
       char* copy_name = (char*)malloc(strlen(file) + 1);
       strlcpy(copy_name, file, strlen(file) + 1);
-      // printf("SYSCALL chdir %s\n", copy_name);
+      // printf("SYSCALL chd ir %s\n", copy_name);
       struct path path;
 
       make_path(copy_name, &path);
@@ -293,13 +294,13 @@ syscall_handler (struct intr_frame *f)
 
       
       if (path.dir == NULL || strlen(path.file_name) > NAME_MAX) {
-        f->eax = -1;
+        f->eax = false;
 	      break;
       }
 
       struct inode* inode = NULL;
       if (dir_lookup(path.dir, path.file_name, &inode) == false) {
-        f->eax = -1;
+        f->eax = false;
         break;
       }
 
