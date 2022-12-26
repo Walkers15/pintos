@@ -14,7 +14,7 @@
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
-#define DIRECT_BLOCK_COUNT 124
+#define DIRECT_BLOCK_COUNT 123
 #define INDIRECT_BLOCK_COUNT (BLOCK_SECTOR_SIZE / 4)
 
 enum inode_type {
@@ -38,6 +38,7 @@ struct inode_disk
     off_t length;                       /* File size in bytes. */
     unsigned magic;                     /* Magic number. */
     // uint32_t unused[125];               /* Not used. */
+    bool is_dir;
     block_sector_t indirect_block_sector_idx;
     block_sector_t double_indirect_block_sector_idx;
     block_sector_t direct_blocks[DIRECT_BLOCK_COUNT];
@@ -159,7 +160,7 @@ inode_init (void)
    Returns true if successful.
    Returns false if memory or disk allocation fails. */
 bool
-inode_create (block_sector_t sector, off_t length)
+inode_create (block_sector_t sector, off_t length, bool is_dir)
 {
   // printf("##INODE CREATE %s %d %d\n", thread_current()->name, sector, length);
   struct inode_disk *disk_inode = NULL;
@@ -181,6 +182,7 @@ inode_create (block_sector_t sector, off_t length)
       disk_inode->magic = INODE_MAGIC;
       disk_inode->double_indirect_block_sector_idx = 0;
       disk_inode->indirect_block_sector_idx = 0;
+      disk_inode->is_dir = is_dir;
       buffer_cache_write (sector, disk_inode);
       // contiguous하지 않아도 되므로 한 block씩 할당하면서 전부 찰때까지 반복
 	  off_t current_length = 0;
@@ -641,4 +643,12 @@ inode_length (const struct inode *inode)
   // free(disk_inode);
   // printf("INODE LENGTH return value %p %d\n", inode, length);
   return length;
+}
+
+bool inode_is_dir(const struct inode* inode) {
+  char buffer[BLOCK_SECTOR_SIZE];
+  struct inode_disk disk_inode;
+  buffer_cache_read(inode->sector, buffer, 0, BLOCK_SECTOR_SIZE, 0);
+  bool is_dir = ((struct inode_disk*)(buffer))->is_dir;
+  return is_dir;
 }

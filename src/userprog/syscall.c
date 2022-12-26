@@ -260,6 +260,13 @@ syscall_handler (struct intr_frame *f)
 																// printf("MAX OF FOUR INT CALL %d\n", f->eax);
 																break;
 															}
+    case SYS_ISDIR: {
+      // bool isdir (int fd) 
+      check_valid_pointer(f->esp + 4);
+      int fd = *(int*) (f->esp + 4);
+      struct file* fp = get_fp_from_fd(fd);
+      f->eax = file_is_dir(fp);
+    }
 
 	}
 	// printf("EXIT!!!\n");

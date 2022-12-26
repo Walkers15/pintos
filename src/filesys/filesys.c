@@ -7,11 +7,17 @@
 #include "filesys/inode.h"
 #include "filesys/directory.h"
 #include "filesys/cache.h"
+#include "threads/thread.h"
 
 /* Partition that contains the file system. */
 struct block *fs_device;
+struct path {
+  char file_name[NAME_MAX + 1];
+  struct dir* dir;
+};
 
 static void do_format (void);
+void make_path(char* path_name, struct path* result);
 
 /* Initializes the file system module.
    If FORMAT is true, reformats the file system. */
@@ -29,6 +35,7 @@ filesys_init (bool format)
     do_format ();
 // printf("call free map open\n");
   free_map_open ();
+  thread_current()->current_dir = dir_open_root();
 }
 
 /* Shuts down the file system module, writing any unwritten data
@@ -48,17 +55,79 @@ bool
 filesys_create (const char *name, off_t initial_size) 
 {
   block_sector_t inode_sector = 0;
-  struct dir *dir = dir_open_root ();
+  // struct dir *dir = dir_open_root ();
+  char* copy_name = (char*)malloc(strlen(name) + 1);
+  strlcpy(copy_name, name, strlen(name) + 1);
+
+  struct path path;
+  // printf("make path!!\n");
+  make_path(copy_name, &path);
+
+  struct dir* dir = path.dir;
+  // printf("path file name %s\n", path.file_name);
   bool success = (dir != NULL
                   && free_map_allocate (1, &inode_sector)
-                  && inode_create (inode_sector, initial_size)
-                  && dir_add (dir, name, inode_sector));
-// printf("FILESYS_CREATE %d\n", success);
+                  && inode_create (inode_sector, initial_size, false)
+                  && dir_add (dir, path.file_name, inode_sector));
+  // printf("FILESYS_CREATE %d\n", success);
   if (!success && inode_sector != 0) 
     free_map_release (inode_sector, 1);
   dir_close (dir);
 
   return success;
+}
+
+void make_path(char* path_name, struct path* result) {
+  /**
+   * 절대 경로 /cse20181641/pintos/text/abc
+   * 상대 경로 ../../pintos/text/abc
+  */
+  struct dir* dir;
+  if (path_name[0] == '/') {
+    dir = dir_open_root();
+  } else {
+    dir = dir_reopen(thread_current()->current_dir);
+  }
+
+  ASSERT(dir != NULL);
+  ASSERT(inode_is_dir(dir_get_inode(dir)));
+
+  char* token1;
+  char* token2;
+  char* temp;
+
+  // dir_token = strtok_r(path_name, "/", &next);
+  token1 = strtok_r(path_name, "/", &temp);
+  token2 = strtok_r(NULL, "/", &temp);
+  // printf("dir token %s, file token %s\n", token1, token2);
+  while(token2 != NULL && token1 != NULL) {
+    // path의 끝에 닿을 때 까지 계속 이동
+    // printf("token1 %s token2 %s\n", token1, token2);
+    struct inode* inode = NULL;
+
+    if (dir_lookup(dir, token1, &inode) == false || inode_is_dir(inode) == false) {
+      // path가 ../file/file 인 경우 Error
+      dir_close(dir);
+      return;
+    }
+
+    dir_close(dir);
+    dir = dir_open(inode);
+
+    token1 = token2;
+    token2 = strtok_r(NULL, "/", &temp);
+  }
+
+  if (token1 == NULL) {
+    // 마지막 끝이 디렉터리인 경우
+    strlcpy(result->file_name, ".", 2);
+  } else {
+    strlcpy(result->file_name, token1, strlen(token1) + 1);
+  }
+
+  result->dir = dir;
+
+  return;
 }
 
 /* Opens the file with the given NAME.
@@ -100,6 +169,10 @@ do_format (void)
 //   printf("\n\nfree_map_create 끝! dir_create 시작\n\n");
   if (!dir_create (ROOT_DIR_SECTOR, 16))
     PANIC ("root directory creation failed");
+
+  struct dir* root = dir_open_root();
+  dir_add(root, ".", ROOT_DIR_SECTOR);
+  dir_add(root, "..", ROOT_DIR_SECTOR);
   free_map_close ();
   printf ("done.\n");
 }

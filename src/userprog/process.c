@@ -151,6 +151,7 @@ process_wait (tid_t child_tid)
 	sema_down(&child->wait);
 	// printf("child TID! %d %d\n", child->tid, child->status);
 	exit_status = child->exit_status;
+  child->current_dir = NULL;
 	list_remove(&(child->child_elem));
 	// printf("child Wait to DIE! %d %d Exit Code %d\n", child->tid, child->status, child->exit_status);
 	sema_up(&child->post_process);

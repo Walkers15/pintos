@@ -99,6 +99,7 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  initial_thread->current_dir = NULL;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -187,6 +188,13 @@ thread_create (const char *name, int priority,
 	// Parent - Child Process 등록
 	list_push_back(&(thread_current()->child_list), &(t->child_elem));
 
+  // Directory 상속
+  if (thread_current()->current_dir != NULL) {
+    t->current_dir = thread_current()->current_dir;
+  } else {
+    t->current_dir = NULL;
+  }
+  
 	t->ofile = (struct file**) malloc (sizeof(struct file*) * 200); // 우선 임의로 fd의 최대 크기를 200으로 설정
 	for (int i = 0; i < 200; i++) {
 		t->ofile[i] = NULL;
